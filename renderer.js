@@ -190,6 +190,17 @@ const dropdownAddCustomRoleBtn = document.getElementById('dropdown-add-custom-ro
  * Initialize application with default isolated tabs and theme
  */
 function init() {
+  const platform = window.abhiSandbox?.platform || (navigator.platform.toLowerCase().includes('win') ? 'win32' : 'darwin');
+  document.body.classList.add(`platform-${platform}`);
+
+  if (window.abhiSandbox?.getWindowInfo) {
+    window.abhiSandbox.getWindowInfo().then(info => {
+      if (info?.isFullScreen) {
+        document.body.classList.add('is-fullscreen');
+      }
+    }).catch(() => {});
+  }
+
   initTheme();
   populateRoleSelectorOptions();
   bindGlobalEvents();
@@ -276,6 +287,21 @@ async function applyThemeMode(mode, showNotification = true) {
 
   const themeAttr = isDark ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', themeAttr);
+
+  // Sync theme and auto-shift wallpapers across all active webviews
+  state.tabs.forEach(tab => {
+    if (tab.webview && typeof tab.webview.executeJavaScript === 'function') {
+      try {
+        tab.webview.executeJavaScript(`
+          if (typeof syncThemeToPage === 'function') {
+            syncThemeToPage('${themeAttr}');
+          } else {
+            document.documentElement.setAttribute('data-theme', '${themeAttr}');
+          }
+        `).catch(() => {});
+      } catch (_e) {}
+    }
+  });
 }
 
 function cycleTheme() {
@@ -712,9 +738,15 @@ function bindIpcListeners() {
     }
   });
 
+  if (window.abhiSandbox.onFullscreenChanged) {
+    window.abhiSandbox.onFullscreenChanged((isFullScreen) => {
+      document.body.classList.toggle('is-fullscreen', isFullScreen);
+    });
+  }
+
   if (window.abhiSandbox.onSystemThemeChanged) {
     window.abhiSandbox.onSystemThemeChanged((info) => {
-      // If in automatic system matching mode, adapt immediately to macOS appearance
+      // If in automatic system matching mode, adapt immediately to OS appearance
       if (state.themeMode === 'auto') {
         const isDark = info.shouldUseDarkColors;
         const themeAttr = isDark ? 'dark' : 'light';
@@ -722,6 +754,20 @@ function bindIpcListeners() {
         if (themeSunIcon) themeSunIcon.style.display = isDark ? 'block' : 'none';
         if (themeMoonIcon) themeMoonIcon.style.display = isDark ? 'none' : 'block';
         themeToggleBtn.title = `Current: ${isDark ? 'Dark' : 'Light'} (Auto) — Click to switch [Cmd+Shift+T]`;
+
+        state.tabs.forEach(tab => {
+          if (tab.webview && typeof tab.webview.executeJavaScript === 'function') {
+            try {
+              tab.webview.executeJavaScript(`
+                if (typeof syncThemeToPage === 'function') {
+                  syncThemeToPage('${themeAttr}');
+                } else {
+                  document.documentElement.setAttribute('data-theme', '${themeAttr}');
+                }
+              `).catch(() => {});
+            } catch (_e) {}
+          }
+        });
       }
     });
   }
@@ -749,6 +795,13 @@ function createTab({ role = 'RoleA', url = DEFAULT_URL, activate = true } = {}) 
   webview.setAttribute('src', url);
   webview.setAttribute('allowpopups', 'true');
   webview.setAttribute('webpreferences', 'contextIsolation=yes, backgroundThrottling=yes, nodeIntegration=no');
+
+  // Enforce modern genuine Chrome User Agent without Electron token
+  // Fixes WhatsApp Web "Update to Chrome 100+" and compatibility check gates
+  const cleanUA = (window.abhiSandbox?.platform === 'win32')
+    ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36'
+    : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36';
+  webview.setAttribute('useragent', cleanUA);
 
   // 2. Create Tab Strip Item with Drag & Drop
   const tabEl = document.createElement('div');

@@ -14,6 +14,20 @@ app.commandLine.appendSwitch('ignore-gpu-blocklist');
 // Enforce lean memory limit per process to eliminate lag and RAM hoarding
 app.commandLine.appendSwitch('js-flags', '--max-old-space-size=512');
 
+// Standard modern Chrome User Agent (Chrome 133) without Electron token
+// Eliminates "Update to Chrome 100+" errors on WhatsApp Web, Netflix, Google Docs, etc.
+function getModernChromeUserAgent() {
+  if (process.platform === 'darwin') {
+    return 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36';
+  } else if (process.platform === 'win32') {
+    return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36';
+  } else {
+    return 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36';
+  }
+}
+
+app.userAgentFallback = getModernChromeUserAgent();
+
 // Centralized keyboard shortcut dispatcher across both main window and guest webviews
 function handleShortcutInput(input, event) {
   if (input.type !== 'keyDown') return false;
@@ -128,6 +142,7 @@ function handleShortcutInput(input, event) {
 
 function createWindow() {
   const isMac = process.platform === 'darwin';
+  const isWin = process.platform === 'win32';
 
   mainWindow = new BrowserWindow({
     width: 1440,
@@ -136,8 +151,14 @@ function createWindow() {
     minHeight: 500,
     title: 'Rays OmniDeck',
     backgroundColor: '#090d16',
-    icon: path.join(__dirname, 'assets', isMac ? 'icon.icns' : 'icon.png'),
-    titleBarStyle: isMac ? 'hiddenInset' : 'default',
+    icon: path.join(__dirname, 'assets', isMac ? 'icon.icns' : (isWin ? 'icon.ico' : 'icon.png')),
+    titleBarStyle: isMac ? 'hiddenInset' : 'hidden',
+    titleBarOverlay: isMac ? false : {
+      color: '#0e1626',
+      symbolColor: '#94a3b8',
+      height: 42
+    },
+    autoHideMenuBar: true,
     trafficLightPosition: isMac ? { x: 14, y: 13 } : undefined,
     webPreferences: {
       nodeIntegration: false,
@@ -228,6 +249,14 @@ function createWindow() {
     }
   });
 
+  mainWindow.on('enter-full-screen', () => {
+    mainWindow?.webContents.send('window:fullscreen-changed', true);
+  });
+
+  mainWindow.on('leave-full-screen', () => {
+    mainWindow?.webContents.send('window:fullscreen-changed', false);
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -235,6 +264,14 @@ function createWindow() {
 
 // Global hook for all webContents created (including guest webviews)
 app.on('web-contents-created', (_event, contents) => {
+  // Enforce clean modern Chrome user agent (Chrome 133) without Electron token
+  // Fixes WhatsApp Web "Update to Chrome 100+" and similar restrictive web apps
+  const modernUA = getModernChromeUserAgent();
+  contents.setUserAgent(modernUA);
+  if (contents.session) {
+    contents.session.setUserAgent(modernUA);
+  }
+
   // Capture keyboard shortcuts even when a webview has active input focus
   contents.on('before-input-event', (e, input) => {
     handleShortcutInput(input, e);
@@ -542,9 +579,30 @@ ipcMain.handle('theme:get-info', async () => {
   };
 });
 
-// Broadcast theme changes to renderer when macOS theme changes
+ipcMain.handle('window:get-info', () => {
+  return {
+    platform: process.platform,
+    isFullScreen: mainWindow ? mainWindow.isFullScreen() : false
+  };
+});
+
+ipcMain.handle('system:get-user-agent', () => {
+  return getModernChromeUserAgent();
+});
+
+// Broadcast theme changes to renderer when macOS/Windows theme changes
 nativeTheme.on('updated', () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
+    if (process.platform === 'win32') {
+      try {
+        mainWindow.setTitleBarOverlay({
+          color: nativeTheme.shouldUseDarkColors ? '#090d16' : '#f8fafc',
+          symbolColor: nativeTheme.shouldUseDarkColors ? '#94a3b8' : '#0f172a',
+          height: 42
+        });
+      } catch (_e) {}
+    }
+
     mainWindow.webContents.send('system:theme-changed', {
       shouldUseDarkColors: nativeTheme.shouldUseDarkColors,
       themeSource: nativeTheme.themeSource

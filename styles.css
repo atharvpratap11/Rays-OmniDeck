@@ -98,17 +98,33 @@ body, html {
   position: relative;
   -webkit-app-region: drag;
   z-index: 50;
+  transition: padding-left 0.2s cubic-bezier(0.16, 1, 0.3, 1), padding-right 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* In fullscreen mode, macOS traffic lights hide so tabs shift left seamlessly */
+body.is-fullscreen .tab-strip-container {
+  padding-left: 12px;
+}
+
+/* On Windows and Linux, there are no traffic lights on the left */
+body.platform-win32 .tab-strip-container {
+  padding-left: 12px;
+  padding-right: 140px; /* Seamless inset for Windows native titleBarOverlay controls */
+}
+
+body.platform-linux .tab-strip-container {
+  padding-left: 12px;
 }
 
 .tab-list {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   overflow-x: auto;
   overflow-y: hidden;
   height: 100%;
   flex: 1;
-  padding-top: 4px;
+  padding: 0 2px;
   scrollbar-width: none;
   -webkit-app-region: no-drag;
 }
@@ -117,24 +133,22 @@ body, html {
   display: none;
 }
 
-/* Interactive Drag-and-Drop Tab Styling */
+/* Interactive Modern Floating Rounded Tabs */
 .tab-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-bottom: none;
-  border-top-left-radius: var(--radius-md);
-  border-top-right-radius: var(--radius-md);
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
   padding: 0 10px;
-  height: 34px;
+  height: 32px;
   min-width: 140px;
   max-width: 220px;
   color: var(--text-secondary);
   cursor: grab;
   position: relative;
-  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   -webkit-app-region: no-drag;
 }
@@ -144,20 +158,20 @@ body, html {
 }
 
 .tab-item:hover {
-  background-color: var(--bg-tertiary);
+  background-color: rgba(125, 125, 125, 0.12);
   color: var(--text-primary);
 }
 
 .tab-item.active {
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
-  border-color: var(--border-highlight);
-  box-shadow: 0 -2px 0 0 var(--active-role-color, var(--brand-primary));
+  border: 1px solid var(--border-highlight);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .tab-item.split-secondary {
-  border-color: var(--role-patient);
-  box-shadow: 0 -2px 0 0 var(--role-patient);
+  border: 1px solid var(--role-patient);
+  background-color: var(--bg-tertiary);
 }
 
 /* Dragging visual indicators */
@@ -233,9 +247,9 @@ body, html {
 .tab-add-btn {
   width: 28px;
   height: 28px;
-  border-radius: var(--radius-md);
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid transparent;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
@@ -248,6 +262,7 @@ body, html {
   background-color: var(--bg-tertiary);
   border-color: var(--border-highlight);
   color: var(--text-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .tab-add-btn svg {
@@ -377,9 +392,9 @@ body, html {
   align-items: center;
   background-color: var(--input-bg);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: 9999px;
   height: 32px;
-  padding: 0 8px;
+  padding: 0 12px;
   gap: 8px;
   transition: all 0.15s ease;
 }
@@ -421,8 +436,8 @@ body, html {
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 4px;
+  padding: 4px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -446,9 +461,14 @@ body, html {
   gap: 6px;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 0 8px;
+  border-radius: 9999px;
+  padding: 0 12px;
   height: 32px;
+  transition: all 0.15s ease;
+}
+
+.role-select-wrapper:hover {
+  border-color: var(--border-highlight);
 }
 
 .role-select-dot {
@@ -480,8 +500,8 @@ body, html {
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 4px;
+  padding: 4px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;

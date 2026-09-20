@@ -78,7 +78,7 @@
       color: var(--text-color);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       user-select: none;
-      transition: background-color 0.2s ease, color 0.2s ease;
+      transition: background 0.3s ease, background-color 0.3s ease, color 0.2s ease;
       overflow: hidden;
     }
 
@@ -185,12 +185,13 @@
       background-color: var(--pill-bg);
     }
 
-    /* Engine Selector Dropdown */
+    /* Modern Custom Search Engine Dropdown with Logos */
     .engine-selector-wrap {
       display: flex;
       align-items: center;
       gap: 10px;
       margin-bottom: 20px;
+      position: relative;
     }
 
     .engine-label {
@@ -201,7 +202,14 @@
       color: var(--subtext-color);
     }
 
-    .engine-dropdown {
+    .engine-dropdown-container {
+      position: relative;
+    }
+
+    .engine-trigger-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       background-color: var(--input-bg);
       border: 1px solid var(--border-color);
       color: var(--text-color);
@@ -211,18 +219,108 @@
       font-weight: 500;
       cursor: pointer;
       outline: none;
-      transition: all 0.15s ease;
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     }
 
-    .engine-dropdown:focus {
+    .engine-trigger-btn:hover {
       border-color: var(--border-focus);
-      box-shadow: 0 0 0 2px rgba(0, 82, 255, 0.2);
+      background-color: var(--pill-bg);
     }
 
-    .engine-dropdown option {
-      background-color: var(--input-bg);
+    .engine-trigger-btn:focus-visible {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px rgba(0, 82, 255, 0.25);
+    }
+
+    .engine-current-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .engine-current-name {
+      font-size: 12.5px;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    .engine-arrow-icon {
+      margin-left: 2px;
+      color: var(--subtext-color);
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .engine-dropdown-container.open .engine-arrow-icon {
+      transform: rotate(180deg);
+    }
+
+    .engine-menu-popup {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 180px;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      padding: 6px;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 200;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .engine-dropdown-container.open .engine-menu-popup {
+      display: flex;
+      animation: dropdownFadeIn 0.15s ease-out;
+    }
+
+    @keyframes dropdownFadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .engine-option-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
       color: var(--text-color);
+      font-size: 12.5px;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.12s ease;
+      width: 100%;
+    }
+
+    .engine-option-btn:hover {
+      background-color: var(--pill-bg);
+    }
+
+    .engine-option-btn.selected {
+      background-color: var(--pill-active-bg);
+      color: var(--pill-active-color);
+      font-weight: 600;
+    }
+
+    .engine-opt-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
     }
 
     /* Wallpaper Customization Bar */
@@ -287,20 +385,21 @@
       background: rgba(0, 82, 255, 0.15);
       color: #38bdf8;
       border: 1px solid rgba(0, 82, 255, 0.4);
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      padding: 0;
       display: flex;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
+      cursor: pointer;
       transition: all 0.15s ease;
     }
 
     .wallpaper-custom-btn:hover {
       background: #0052ff;
       color: #fff;
+      transform: scale(1.05);
     }
   </style>
 </head>
@@ -337,24 +436,114 @@
       </div>
     </form>
 
-    <!-- Search Engine Selector Dropdown -->
+    <!-- Search Engine Selector with Logos and Neatly Placed Down-Arrow -->
     <div class="engine-selector-wrap">
       <span class="engine-label">Search Engine:</span>
-      <select id="engine-select" class="engine-dropdown" title="Choose Search Engine">
-        <option value="google" data-engine="google">Google</option>
-        <option value="duckduckgo" data-engine="duckduckgo">DuckDuckGo</option>
-        <option value="bing" data-engine="bing">Microsoft Bing</option>
-        <option value="yahoo" data-engine="yahoo">Yahoo</option>
-        <option value="brave" data-engine="brave">Brave Search</option>
-        <option value="ecosia" data-engine="ecosia">Ecosia</option>
-        <option value="startpage" data-engine="startpage">Startpage</option>
-        <option value="yandex" data-engine="yandex">Yandex</option>
-        <option value="baidu" data-engine="baidu">Baidu</option>
-      </select>
+      <div class="engine-dropdown-container" id="engine-dropdown-container">
+        <button type="button" class="engine-trigger-btn" id="engine-trigger-btn" title="Choose Search Engine">
+          <span class="engine-current-icon" id="engine-current-icon"></span>
+          <span class="engine-current-name" id="engine-current-name">Google</span>
+          <svg class="engine-arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div class="engine-menu-popup" id="engine-menu-popup">
+          <button type="button" class="engine-option-btn" data-engine="google">
+            <span class="engine-opt-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+              </svg>
+            </span>
+            <span>Google</span>
+          </button>
+          <button type="button" class="engine-option-btn" data-engine="duckduckgo">
+            <span class="engine-opt-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="#DE5833"/>
+                <path d="M12 6c-2.5 0-4.5 1.8-4.5 4 0 1.2.6 2.3 1.6 3-.3.8-.9 1.7-1.8 2.2 1.5.1 2.9-.6 3.7-1.4.3.1.7.2 1 .2 2.5 0 4.5-1.8 4.5-4s-2-4-4.5-4z" fill="#FFFFFF"/>
+                <circle cx="10.5" cy="9.5" r="1" fill="#333333"/>
+                <path d="M11 11.5c.8.6 1.8.8 2.8.5-.2.7-.9 1.2-1.7 1.2-.6 0-1.1-.3-1.4-.8l.3-.9z" fill="#F89C1E"/>
+              </svg>
+            </span>
+            <span>DuckDuckGo</span>
+          </button>
+          <button type="button" class="engine-option-btn" data-engine="bing">
+            <span class="engine-opt-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24">
+                <path fill="#008373" d="M5 2v19l6.5-3.7 4.2 2.7L20 17V8.5l-8.5-3.2L5 2zm3.2 3.5l4.3 1.6v10.3l-4.3 2.5V5.5z"/>
+                <path fill="#00A4EF" d="M12.5 7.1l6 2.3v6.5l-6-3.8V7.1z"/>
+              </svg>
+            </span>
+            <span>Microsoft Bing</span>
+          </button>
+          <button type="button" class="engine-option-btn" data-engine="yahoo">
+            <span class="engine-opt-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#6001D2">
+                <circle cx="12" cy="12" r="11" fill="#6001D2"/>
+                <path d="M7 6.5l3.6 6.8v4.2h2.8v-4.2l3.6-6.8h-2.9l-2.1 4.5-2.1-4.5H7z" fill="#FFFFFF"/>
+              </svg>
+            </span>
+            <span>Yahoo</span>
+          </button>
+          <button type="button" class="engine-option-btn" data-engine="brave">
+            <span class="engine-opt-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L4 6v6c0 5.5 3.8 10.7 8 12 4.2-1.3 8-6.5 8-12V6l-8-4z" fill="#FB542B"/>
+                <path d="M12 6.5l-4 3 1.5 5.5 2.5-1.5 2.5 1.5 1.5-5.5-4-3z" fill="#FFFFFF"/>
+              </svg>
+            </span>
+            <span>Brave Search</span>
+          </button>
+          <button type="button" class="engine-option-btn" data-engine="ecosia">
+            <span class="engine-opt-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="11" fill="#008659"/>
+                <path d="M12 5c-3.2 0-5.5 2.3-5.5 5.2 0 1.8 1 3.4 2.5 4.3v4.5h6v-4.5c1.5-.9 2.5-2.5 2.5-4.3 0-2.9-2.3-5.2-5.5-5.2z" fill="#FFFFFF"/>
+                <path d="M11 14h2v5h-2z" fill="#A46E43"/>
+              </svg>
+            </span>
+            <span>Ecosia</span>
+          </button>
+          <button type="button" class="engine-option-btn" data-engine="startpage">
+            <span class="engine-opt-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="11" fill="#1A73E8"/>
+                <path d="M7.5 9c0-1.4 1.1-2.5 2.5-2.5h4c1.4 0 2.5 1.1 2.5 2.5 0 .8-.4 1.5-1 1.9.9.5 1.5 1.4 1.5 2.6 0 1.7-1.3 3-3 3H9.5C8.4 16.5 7.5 15.6 7.5 14.5V9z" fill="#FFFFFF"/>
+              </svg>
+            </span>
+            <span>Startpage</span>
+          </button>
+          <button type="button" class="engine-option-btn" data-engine="yandex">
+            <span class="engine-opt-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="11" fill="#FC3F1D"/>
+                <path d="M14 6h-2.5c-1.8 0-3 1.2-3 2.8 0 1.4.7 2.3 2 3.1L8.5 18h2.6l2.3-6.2c.4-.3.7-.6.9-1 .3-.5.4-1.1.4-1.7V6zm-.5 3.3c0 .8-.5 1.4-1.3 1.4h-1c-.7 0-1.1-.4-1.1-1.1 0-.7.5-1.2 1.2-1.2h1.2c.6 0 1 .4 1 .9z" fill="#FFFFFF"/>
+              </svg>
+            </span>
+            <span>Yandex</span>
+          </button>
+          <button type="button" class="engine-option-btn" data-engine="baidu">
+            <span class="engine-opt-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="11" fill="#2932E1"/>
+                <ellipse cx="8.5" cy="9.5" rx="1.5" ry="2" fill="#FFFFFF"/>
+                <ellipse cx="15.5" cy="9.5" rx="1.5" ry="2" fill="#FFFFFF"/>
+                <ellipse cx="10" cy="6.5" rx="1.2" ry="1.5" fill="#FFFFFF"/>
+                <ellipse cx="14" cy="6.5" rx="1.2" ry="1.5" fill="#FFFFFF"/>
+                <path d="M9 13.5c0-1.5 1.3-2.5 3-2.5s3 1 3 2.5c0 1.8-1.5 3.5-3 3.5s-3-1.7-3-3.5z" fill="#FFFFFF"/>
+              </svg>
+            </span>
+            <span>Baidu</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Wallpaper Switcher Bar -->
+  <!-- Wallpaper Switcher Bar with Upload Icon -->
   <div class="wallpaper-control-bar">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -364,14 +553,18 @@
     <span class="wallpaper-label">Wallpaper:</span>
     <select id="wallpaper-select" class="wallpaper-dropdown" title="Change Home Wallpaper">
       <option value="aurora">Cosmic Aurora (Default)</option>
-      <option value="cyber-mesh">Deep Tech Mesh</option>
-      <option value="gradient-dark">Midnight Gradient</option>
+      <option value="cyber-mesh">Tech Mesh</option>
+      <option value="gradient">Clean Gradient</option>
       <option value="sunset-glow">Sunset Glow</option>
-      <option value="clean-slate">Clean Minimal Slate</option>
+      <option value="clean-slate">Minimal Slate</option>
       <option value="custom">Custom Image URL...</option>
     </select>
-    <button id="wallpaper-upload-btn" class="wallpaper-custom-btn" title="Choose Local Wallpaper Image">
-      <span>Upload</span>
+    <button id="wallpaper-upload-btn" class="wallpaper-custom-btn" title="Upload Local Wallpaper Image">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
     </button>
     <input type="file" id="wallpaper-file-input" accept="image/*" style="display: none;">
   </div>
@@ -379,72 +572,159 @@
   <script>
     const searchForm = document.getElementById('search-form');
     const searchInput = document.getElementById('search-input');
-    const engineSelect = document.getElementById('engine-select');
+    const engineDropdownContainer = document.getElementById('engine-dropdown-container');
+    const engineTriggerBtn = document.getElementById('engine-trigger-btn');
+    const engineCurrentIcon = document.getElementById('engine-current-icon');
+    const engineCurrentName = document.getElementById('engine-current-name');
+    const engineMenuPopup = document.getElementById('engine-menu-popup');
     const wallpaperSelect = document.getElementById('wallpaper-select');
     const wallpaperUploadBtn = document.getElementById('wallpaper-upload-btn');
     const wallpaperFileInput = document.getElementById('wallpaper-file-input');
 
     const ENGINES = {
-      google: 'https://www.google.com/search?q=',
-      duckduckgo: 'https://duckduckgo.com/?q=',
-      bing: 'https://www.bing.com/search?q=',
-      yahoo: 'https://search.yahoo.com/search?p=',
-      brave: 'https://search.brave.com/search?q=',
-      ecosia: 'https://www.ecosia.org/search?q=',
-      startpage: 'https://www.startpage.com/sp/search?query=',
-      yandex: 'https://yandex.com/search/?text=',
-      baidu: 'https://www.baidu.com/s?wd='
+      google: { name: 'Google', url: 'https://www.google.com/search?q=' },
+      duckduckgo: { name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=' },
+      bing: { name: 'Microsoft Bing', url: 'https://www.bing.com/search?q=' },
+      yahoo: { name: 'Yahoo', url: 'https://search.yahoo.com/search?p=' },
+      brave: { name: 'Brave Search', url: 'https://search.brave.com/search?q=' },
+      ecosia: { name: 'Ecosia', url: 'https://www.ecosia.org/search?q=' },
+      startpage: { name: 'Startpage', url: 'https://www.startpage.com/sp/search?query=' },
+      yandex: { name: 'Yandex', url: 'https://yandex.com/search/?text=' },
+      baidu: { name: 'Baidu', url: 'https://www.baidu.com/s?wd=' }
     };
 
-    const WALLPAPERS = {
+    // Dark Mode Wallpaper Presets
+    const WALLPAPERS_DARK = {
       'aurora': 'radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.45) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(88, 28, 135, 0.4) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(14, 116, 144, 0.35) 0px, transparent 50%), radial-gradient(at 0% 100%, rgba(15, 23, 42, 0.9) 0px, transparent 50%), #070b14',
       'cyber-mesh': 'radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.15) 0%, transparent 60%), linear-gradient(135deg, #090d16 0%, #030712 100%)',
-      'gradient-dark': 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%)',
+      'gradient': 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%)',
       'sunset-glow': 'radial-gradient(circle at 20% 20%, rgba(244, 63, 94, 0.25) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.2) 0%, transparent 50%), #090d16',
       'clean-slate': '#070b14'
     };
 
-    // 1. Initialize Engine Dropdown
+    // Light Mode Wallpaper Presets (Auto-Shifts dynamically when light mode is active)
+    const WALLPAPERS_LIGHT = {
+      'aurora': 'radial-gradient(at 0% 0%, rgba(191, 219, 254, 0.65) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(233, 213, 255, 0.55) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(186, 230, 253, 0.55) 0px, transparent 50%), radial-gradient(at 0% 100%, rgba(241, 245, 249, 0.9) 0px, transparent 50%), #f8fafc',
+      'cyber-mesh': 'radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.12) 0%, transparent 60%), linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
+      'gradient': 'linear-gradient(135deg, #f8fafc 0%, #ede9fe 50%, #e0f2fe 100%)',
+      'sunset-glow': 'radial-gradient(circle at 20% 20%, rgba(254, 205, 211, 0.55) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(254, 243, 199, 0.55) 0%, transparent 50%), #f8fafc',
+      'clean-slate': '#f8fafc'
+    };
+
+    // Determine current theme state
+    function isPageLightTheme() {
+      const explicit = document.documentElement.getAttribute('data-theme');
+      if (explicit === 'light') return true;
+      if (explicit === 'dark') return false;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    }
+
+    // 1. Initialize Engine Custom Dropdown
     let selectedEngine = localStorage.getItem('rays_engine') || 'google';
     if (!ENGINES[selectedEngine]) selectedEngine = 'google';
-    if (engineSelect) {
-      engineSelect.value = selectedEngine;
-      engineSelect.addEventListener('change', () => {
-        selectedEngine = engineSelect.value;
-        localStorage.setItem('rays_engine', selectedEngine);
-        searchInput.focus();
+
+    function updateEngineUI(engineKey) {
+      selectedEngine = engineKey;
+      localStorage.setItem('rays_engine', engineKey);
+
+      const targetBtn = engineMenuPopup.querySelector(`[data-engine="${engineKey}"]`);
+      if (targetBtn) {
+        engineMenuPopup.querySelectorAll('.engine-option-btn').forEach(b => b.classList.remove('selected'));
+        targetBtn.classList.add('selected');
+        const iconSvg = targetBtn.querySelector('.engine-opt-icon').innerHTML;
+        engineCurrentIcon.innerHTML = iconSvg;
+        engineCurrentName.textContent = ENGINES[engineKey].name;
+      }
+    }
+
+    updateEngineUI(selectedEngine);
+
+    if (engineTriggerBtn) {
+      engineTriggerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        engineDropdownContainer.classList.toggle('open');
       });
     }
 
-    // 2. Initialize Wallpaper
+    if (engineMenuPopup) {
+      engineMenuPopup.querySelectorAll('.engine-option-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const engineKey = btn.getAttribute('data-engine');
+          updateEngineUI(engineKey);
+          engineDropdownContainer.classList.remove('open');
+          searchInput.focus();
+        });
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!engineDropdownContainer.contains(e.target)) {
+        engineDropdownContainer.classList.remove('open');
+      }
+    });
+
+    // 2. Wallpaper Engine with Auto Light/Dark Shifting
     function applyWallpaper(wpKey, customUrl = null) {
       if (customUrl) {
-        document.body.style.backgroundImage = `url("${customUrl}")`;
-        document.body.style.backgroundSize = 'cover';
-        document.body.style.backgroundPosition = 'center';
-        document.body.style.backgroundRepeat = 'no-repeat';
+        document.body.style.background = `url("${customUrl}") center / cover no-repeat`;
         localStorage.setItem('rays_wallpaper_type', 'custom');
         localStorage.setItem('rays_wallpaper_url', customUrl);
         if (wallpaperSelect) wallpaperSelect.value = 'custom';
         return;
       }
 
-      const wpStyle = WALLPAPERS[wpKey] || WALLPAPERS['aurora'];
+      const isLight = isPageLightTheme();
+      const palette = isLight ? WALLPAPERS_LIGHT : WALLPAPERS_DARK;
+      const wpStyle = palette[wpKey] || palette['aurora'];
+
       document.body.style.background = wpStyle;
       document.body.style.backgroundSize = 'cover';
       document.body.style.backgroundPosition = 'center';
       document.body.style.backgroundRepeat = 'no-repeat';
+
       localStorage.setItem('rays_wallpaper_type', wpKey);
       localStorage.removeItem('rays_wallpaper_url');
       if (wallpaperSelect) wallpaperSelect.value = wpKey;
     }
 
-    const savedWpType = localStorage.getItem('rays_wallpaper_type') || 'aurora';
-    const savedWpUrl = localStorage.getItem('rays_wallpaper_url');
-    if (savedWpType === 'custom' && savedWpUrl) {
-      applyWallpaper('custom', savedWpUrl);
+    function syncThemeToPage(themeAttr = null) {
+      if (themeAttr) {
+        document.documentElement.setAttribute('data-theme', themeAttr);
+      }
+      const savedWpType = localStorage.getItem('rays_wallpaper_type') || 'aurora';
+      const savedWpUrl = localStorage.getItem('rays_wallpaper_url');
+      if (savedWpType === 'custom' && savedWpUrl) {
+        applyWallpaper('custom', savedWpUrl);
+      } else {
+        applyWallpaper(savedWpType);
+      }
+    }
+
+    window.syncThemeToPage = syncThemeToPage;
+    window.updateWallpaperForTheme = syncThemeToPage;
+
+    // Listen to system theme changes
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        syncThemeToPage();
+      });
+    }
+
+    // Initial theme & wallpaper boot
+    try {
+      const savedTheme = localStorage.getItem('rays_theme_mode') || localStorage.getItem('rays_theme');
+      if (savedTheme && savedTheme !== 'auto' && savedTheme !== 'system') {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    } catch (_e) {}
+
+    const initWpType = localStorage.getItem('rays_wallpaper_type') || 'aurora';
+    const initWpUrl = localStorage.getItem('rays_wallpaper_url');
+    if (initWpType === 'custom' && initWpUrl) {
+      applyWallpaper('custom', initWpUrl);
     } else {
-      applyWallpaper(savedWpType);
+      applyWallpaper(initWpType);
     }
 
     if (wallpaperSelect) {
@@ -480,7 +760,7 @@
       });
     }
 
-    // 3. Search Form Submit
+    // 3. Search Form Submission
     searchForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const query = searchInput.value.trim();
@@ -501,17 +781,9 @@
       }
 
       // Otherwise, search with selected engine
-      const searchUrl = ENGINES[selectedEngine] || ENGINES.google;
-      window.location.href = searchUrl + encodeURIComponent(query);
+      const engineObj = ENGINES[selectedEngine] || ENGINES.google;
+      window.location.href = engineObj.url + encodeURIComponent(query);
     });
-
-    // 4. Sync theme from localStorage if available
-    try {
-      const savedTheme = localStorage.getItem('rays_theme_mode') || localStorage.getItem('rays_theme');
-      if (savedTheme && savedTheme !== 'auto' && savedTheme !== 'system') {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-      }
-    } catch (_e) {}
   </script>
 </body>
 </html>

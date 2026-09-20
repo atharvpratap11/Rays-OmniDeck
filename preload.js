@@ -36,6 +36,12 @@ contextBridge.exposeInMainWorld('abhiSandbox', {
   getThemeInfo: () => ipcRenderer.invoke('theme:get-info'),
   onSystemThemeChanged: (callback) => ipcRenderer.on('system:theme-changed', (_event, data) => callback(data)),
 
+  // Window and Platform Info
+  platform: process.platform,
+  getWindowInfo: () => ipcRenderer.invoke('window:get-info'),
+  getUserAgent: () => ipcRenderer.invoke('system:get-user-agent'),
+  onFullscreenChanged: (callback) => ipcRenderer.on('window:fullscreen-changed', (_event, isFullScreen) => callback(isFullScreen)),
+
   // Auto-Updater
   checkForUpdates: () => ipcRenderer.invoke('updater:check-for-updates'),
   restartAndInstallUpdate: () => ipcRenderer.invoke('updater:restart-and-install'),

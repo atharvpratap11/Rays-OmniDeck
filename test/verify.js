@@ -30,6 +30,7 @@ const requiredFiles = [
   'styles.css',
   'assets/icon.icns',
   'assets/icon.png',
+  'assets/icon.ico',
   'README.md'
 ];
 
@@ -155,7 +156,18 @@ assert(stylesContent.includes('.update-banner'), 'Update banner styles defined')
 assert(mainContent.includes('autoUpdater.checkForUpdates'), 'main.js wires autoUpdater.checkForUpdates');
 assert(mainContent.includes('autoUpdater.quitAndInstall'), 'main.js wires autoUpdater.quitAndInstall');
 assert(preloadContent.includes('checkForUpdates') && preloadContent.includes('restartAndInstallUpdate'), 'preload.js exposes updater IPC methods');
-assert(rendererContent.includes('initAutoUpdater'), 'renderer.js initializes auto-updater lifecycle and UI banner');
+// 12. Verify Modern UI Upgrades, Windows Overlay & WhatsApp Web UserAgent
+console.log('\n12. Inspecting Modern UI Upgrades & Windows/WhatsApp Fixes...');
+assert(mainContent.includes('getModernChromeUserAgent'), 'Clean Chrome 133 user agent generator present in main.js');
+assert(rendererContent.includes('useragent'), 'Webviews configured with clean modern Chrome userAgent in renderer.js');
+assert(mainContent.includes('titleBarOverlay'), 'Windows native window controls overlay configured in main.js');
+assert(mainContent.includes('autoHideMenuBar: true'), 'Legacy Win32 menu bar hidden in main.js');
+assert(stylesContent.includes('border-radius: 9999px'), 'Address bar and role selector have complete rounded pill corners');
+assert(!stylesContent.includes('box-shadow: 0 -2px 0 0'), 'Tab top accent line removed for clean floating tab design');
+assert(stylesContent.includes('body.is-fullscreen .tab-strip-container'), 'Tab strip shifts left when fullscreen');
+assert(newtabContent.includes('WALLPAPERS_LIGHT') && newtabContent.includes('WALLPAPERS_DARK'), 'Dual-palette wallpaper auto-shift configured in newtab.html');
+assert(newtabContent.includes('id="wallpaper-upload-btn"') && newtabContent.includes('polyline points="17 8 12 3 7 8"'), 'Wallpaper upload button uses modern SVG upload icon');
+assert(newtabContent.includes('engine-dropdown-container') && newtabContent.includes('engine-arrow-icon'), 'Search engine custom dropdown with aligned down-arrow present');
 
 console.log(`\n========================================`);
 console.log(`Test Results: ${passed} Passed, ${failed} Failed`);
