@@ -278,7 +278,7 @@
       </div>
       <div class="modal-body">
         <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-          <div style="font-weight: 600; color: var(--brand-primary); margin-bottom: 4px;">🧩 Extension Sandboxing Active</div>
+          <div style="font-weight: 600; color: var(--brand-primary); margin-bottom: 4px;">Extension Sandboxing Active</div>
           <p style="font-size: 12px; color: var(--text-muted);">Standard third-party browser extensions are sandboxed per tab to prevent session tampering between simulated roles.</p>
         </div>
         <p style="font-size: 12px; color: var(--text-secondary);">Custom role injection scripts, token injection utilities, and HL7/FHIR tools can be attached via DevTools.</p>
@@ -294,7 +294,7 @@
     <div class="modal-card" style="width: 540px;">
       <div class="modal-header">
         <div class="modal-title">
-          <span>🍪 Partition Cookies</span>
+          <span>Partition Cookies</span>
         </div>
         <button class="modal-close-btn" data-close="cookie-modal">&times;</button>
       </div>
@@ -317,7 +317,7 @@
     <div class="modal-card" style="width: 440px;">
       <div class="modal-header">
         <div class="modal-title">
-          <span>🎭 Custom Role Persona</span>
+          <span>Custom Role Persona</span>
         </div>
         <button class="modal-close-btn" data-close="role-modal">&times;</button>
       </div>
@@ -374,16 +374,15 @@
       <p class="gemini-drawer-desc">Instant QA assistance: Generate synthetic patient/user profiles, simulate edge-case prescriptions, and draft test reports.</p>
       
       <div class="gemini-quick-prompts">
-        <button class="gemini-prompt-chip" data-prompt="Generate 5 realistic patient records with vitals (BP, heart rate, SPO2), chief complaints, and past medical history in JSON">🧑‍⚕️ 5 Synthetic Patient Profiles</button>
-        <button class="gemini-prompt-chip" data-prompt="Create 5 pharmacy prescription test payloads with drug names, dosages, frequencies, and allergy contraindications in JSON">💊 5 Prescription Test Payloads</button>
-        <button class="gemini-prompt-chip" data-prompt="List 8 concurrent test scenarios for Doctor, Patient, Pharmacist and Pathology roles testing simultaneous workflows">🧪 Multi-Role Test Scenarios</button>
-        <button class="gemini-prompt-chip" data-prompt="Draft a structured QA bug report template for a session bleeding and cookie leakage vulnerability">🐞 QA Bug Report Template</button>
+        <button class="gemini-prompt-chip" data-prompt="Generate 5 realistic patient records with vitals (BP, heart rate, SPO2), chief complaints, and past medical history in JSON">5 Synthetic Patient Profiles</button>
+        <button class="gemini-prompt-chip" data-prompt="Create 5 pharmacy prescription test payloads with drug names, dosages, frequencies, and allergy contraindications in JSON">5 Prescription Test Payloads</button>
+        <button class="gemini-prompt-chip" data-prompt="List 8 concurrent test scenarios for Doctor, Patient, Pharmacist and Pathology roles testing simultaneous workflows">Multi-Role Test Scenarios</button>
+        <button class="gemini-prompt-chip" data-prompt="Draft a structured QA bug report template for a session bleeding and cookie leakage vulnerability">QA Bug Report Template</button>
       </div>
 
       <div class="gemini-chat-container">
         <div id="gemini-chat-output" class="gemini-chat-output">
           <div class="gemini-msg assistant">
-            <span class="gemini-msg-sparkle">✨</span>
             <div class="gemini-msg-text">Ready to assist your testing session! Click a quick prompt chip above or type any test data request below.</div>
           </div>
         </div>
@@ -414,7 +413,11 @@
   <!-- In-Browser Floating Auto-Update Banner -->
   <div id="update-banner" class="update-banner" style="display: none;">
     <div class="update-banner-content">
-      <div class="update-banner-icon">🚀</div>
+      <div class="update-banner-icon">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+        </svg>
+      </div>
       <div class="update-banner-info">
         <span id="update-banner-title" class="update-banner-title">Update Ready</span>
         <span id="update-banner-desc" class="update-banner-desc">A new version of Rays OmniDeck is ready.</span>

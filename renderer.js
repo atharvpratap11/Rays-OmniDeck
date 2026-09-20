@@ -3,44 +3,37 @@ const DEFAULT_ROLE_CONFIGS = {
   RoleA: {
     color: '#10b981',
     label: 'Role A',
-    desc: 'Primary persona (Doctor, Admin, etc.)',
-    icon: '👤'
+    desc: 'Primary persona (Doctor, Admin, etc.)'
   },
   RoleB: {
     color: '#3b82f6',
     label: 'Role B',
-    desc: 'Secondary persona (Patient, User, etc.)',
-    icon: '🧑‍🦱'
+    desc: 'Secondary persona (Patient, User, etc.)'
   },
   RoleC: {
     color: '#8b5cf6',
     label: 'Role C',
-    desc: 'Tertiary persona (Pharmacy, Agent, etc.)',
-    icon: '💊'
+    desc: 'Tertiary persona (Pharmacy, Agent, etc.)'
   },
   RoleD: {
     color: '#f59e0b',
     label: 'Role D',
-    desc: 'Pathology, Analyst, Inspector, etc.',
-    icon: '🔬'
+    desc: 'Pathology, Analyst, Inspector, etc.'
   },
   RoleE: {
     color: '#ec4899',
     label: 'Role E',
-    desc: 'Nurse, Staff, Operator, etc.',
-    icon: '👩‍⚕️'
+    desc: 'Nurse, Staff, Operator, etc.'
   },
   RoleF: {
     color: '#06b6d4',
     label: 'Role F',
-    desc: 'Receptionist, Billing, Support, etc.',
-    icon: '📋'
+    desc: 'Receptionist, Billing, Support, etc.'
   },
   Custom: {
     color: '#94a3b8',
     label: 'Custom',
-    desc: 'Isolated Blank Partition',
-    icon: '➕'
+    desc: 'Isolated Blank Partition'
   }
 };
 
@@ -1184,8 +1177,7 @@ function saveCustomRole() {
   ROLE_CONFIGS[roleKey] = {
     color: state.selectedModalColor,
     label: name,
-    desc: roleDesc,
-    icon: '🎭'
+    desc: roleDesc
   };
 
   // Persist custom roles to localStorage
@@ -1714,11 +1706,10 @@ High privilege escalation vulnerability if patient acquires doctor bearer tokens
   const assistantMsg = document.createElement('div');
   assistantMsg.className = 'gemini-msg assistant';
   assistantMsg.innerHTML = `
-    <span class="gemini-msg-sparkle">✨</span>
     <div class="gemini-msg-text">
       ${responseHtml}
       <div style="margin-top: 8px;">
-        <button class="modal-btn" style="padding: 3px 8px; font-size: 10.5px;" onclick="navigator.clipboard.writeText(this.closest('.gemini-msg-text').querySelector('pre')?.innerText || this.closest('.gemini-msg-text').innerText); this.textContent = '✓ Copied!'; setTimeout(() => this.textContent = '📋 Copy Payload', 1500);">📋 Copy Payload</button>
+        <button class="modal-btn" style="padding: 3px 8px; font-size: 10.5px;" onclick="navigator.clipboard.writeText(this.closest('.gemini-msg-text').querySelector('pre')?.innerText || this.closest('.gemini-msg-text').innerText); this.textContent = 'Copied'; setTimeout(() => this.textContent = 'Copy Payload', 1500);">Copy Payload</button>
       </div>
     </div>
   `;
@@ -1795,7 +1786,7 @@ function initAutoUpdater() {
       if (updateBadgeDot) updateBadgeDot.style.display = 'block';
 
       if (updateBanner) {
-        updateBannerTitle.textContent = `🚀 Update Ready (v${data.version})!`;
+        updateBannerTitle.textContent = `Update Ready (v${data.version})`;
         updateBannerDesc.textContent = 'A new version has been downloaded. Restart the browser to apply it.';
         if (updateProgressBarWrap) updateProgressBarWrap.style.display = 'none';
         if (updateRestartBtn) {
