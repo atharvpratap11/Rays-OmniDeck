@@ -1,8 +1,6 @@
 # Rays OmniDeck 
 
-> **Minimal Multi-Role Desktop Testing Browser with Strict Partition Isolation & In-Browser Auto-Updates**
-
-**Rays OmniDeck** is a specialized Electron/Chromium-based desktop testing browser engineered to test and validate concurrent multi-user workflows (e.g. Doctor, Patient, Pharmacy, Pathology, Admin) simultaneously in a single window with **zero session bleeding or cookie leakage**.
+**Rays OmniDeck** is a specialized Electron/Chromium-based desktop testing browser engineered to test and validate concurrent multi-user workflows simultaneously in a single window with **zero session bleeding or cookie leakage**.
 
 ---
 
