@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>rays.foundation</title>
+  <style>
+    :root {
+      --bg-color: #070b14;
+      --text-color: #f8fafc;
+      --subtext-color: #94a3b8;
+      --input-bg: #0e1626;
+      --border-color: #1e293b;
+      --border-focus: #0052ff;
+      --brand-gradient: linear-gradient(135deg, #0052ff 0%, #38bdf8 100%);
+      --pill-bg: #131d33;
+      --pill-active-bg: rgba(0, 82, 255, 0.2);
+      --pill-active-border: #0052ff;
+      --pill-active-color: #38bdf8;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-color: #f8fafc;
+        --text-color: #0f172a;
+        --subtext-color: #64748b;
+        --input-bg: #ffffff;
+        --border-color: #e2e8f0;
+        --border-focus: #0052ff;
+        --pill-bg: #f1f5f9;
+        --pill-active-bg: rgba(0, 82, 255, 0.12);
+        --pill-active-border: #0052ff;
+        --pill-active-color: #0052ff;
+      }
+    }
+
+    /* Support forced data-theme attribute */
+    html[data-theme="light"] {
+      --bg-color: #f8fafc;
+      --text-color: #0f172a;
+      --subtext-color: #64748b;
+      --input-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --border-focus: #0052ff;
+      --pill-bg: #f1f5f9;
+      --pill-active-bg: rgba(0, 82, 255, 0.12);
+      --pill-active-border: #0052ff;
+      --pill-active-color: #0052ff;
+    }
+
+    html[data-theme="dark"] {
+      --bg-color: #070b14;
+      --text-color: #f8fafc;
+      --subtext-color: #94a3b8;
+      --input-bg: #0e1626;
+      --border-color: #1e293b;
+      --border-focus: #0052ff;
+      --pill-bg: #131d33;
+      --pill-active-bg: rgba(0, 82, 255, 0.2);
+      --pill-active-border: #0052ff;
+      --pill-active-color: #38bdf8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 580px;
+      padding: 0 24px;
+      margin-top: -60px;
+    }
+
+    .brand-title {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      margin-bottom: 24px;
+      background: var(--brand-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #0052ff;
+      box-shadow: 0 0 12px #0052ff;
+      display: inline-block;
+    }
+
+    .search-form {
+      width: 100%;
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .search-input-wrapper {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      background-color: var(--input-bg);
+      border: 1.5px solid var(--border-color);
+      border-radius: 28px;
+      padding: 6px 18px;
+      height: 52px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .search-input-wrapper:focus-within {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(0, 82, 255, 0.25), 0 8px 24px rgba(0, 0, 0, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .search-icon {
+      color: var(--subtext-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+    }
+
+    .search-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .search-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 15px;
+      color: var(--text-color);
+      font-family: inherit;
+    }
+
+    .search-input::placeholder {
+      color: var(--subtext-color);
+      opacity: 0.7;
+    }
+
+    .search-submit-btn {
+      background: none;
+      border: none;
+      color: var(--subtext-color);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      border-radius: 50%;
+      transition: all 0.15s ease;
+    }
+
+    .search-submit-btn:hover {
+      color: #0052ff;
+      background-color: var(--pill-bg);
+    }
+
+    /* Engine Selector Pills */
+    .engine-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .engine-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--subtext-color);
+      margin-right: 4px;
+    }
+
+    .engine-pill {
+      background-color: var(--pill-bg);
+      border: 1px solid var(--border-color);
+      color: var(--subtext-color);
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      outline: none;
+    }
+
+    .engine-pill:hover {
+      color: var(--text-color);
+      border-color: var(--border-focus);
+    }
+
+    .engine-pill.active {
+      background-color: var(--pill-active-bg);
+      border-color: var(--pill-active-border);
+      color: var(--pill-active-color);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="brand-title">
+      <span>rays.foundation</span>
+      <span class="brand-dot"></span>
+    </div>
+
+    <form id="search-form" class="search-form">
+      <div class="search-input-wrapper">
+        <div class="search-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+        <input 
+          type="text" 
+          id="search-input" 
+          class="search-input" 
+          placeholder="Search with Google, DuckDuckGo, Yahoo or enter URL..." 
+          autofocus 
+          autocomplete="off" 
+          spellcheck="false"
+        >
+        <button type="submit" class="search-submit-btn" title="Search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+      </div>
+    </form>
+
+    <div class="engine-selector">
+      <span class="engine-label">Engine:</span>
+      <button type="button" class="engine-pill active" data-engine="google">Google</button>
+      <button type="button" class="engine-pill" data-engine="duckduckgo">DuckDuckGo</button>
+      <button type="button" class="engine-pill" data-engine="yahoo">Yahoo</button>
+    </div>
+  </div>
+
+  <script>
+    const searchForm = document.getElementById('search-form');
+    const searchInput = document.getElementById('search-input');
+    const enginePills = document.querySelectorAll('.engine-pill');
+
+    const ENGINES = {
+      google: 'https://www.google.com/search?q=',
+      duckduckgo: 'https://duckduckgo.com/?q=',
+      yahoo: 'https://search.yahoo.com/search?p='
+    };
+
+    let selectedEngine = localStorage.getItem('rays_engine') || 'google';
+
+    function setEngine(engine) {
+      if (!ENGINES[engine]) return;
+      selectedEngine = engine;
+      localStorage.setItem('rays_engine', engine);
+
+      enginePills.forEach(pill => {
+        pill.classList.toggle('active', pill.getAttribute('data-engine') === engine);
+      });
+    }
+
+    setEngine(selectedEngine);
+
+    enginePills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        setEngine(pill.getAttribute('data-engine'));
+        searchInput.focus();
+      });
+    });
+
+    searchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const query = searchInput.value.trim();
+      if (!query) return;
+
+      // If query is an exact URL or domain
+      if (/^https?:\/\//i.test(query)) {
+        window.location.href = query;
+        return;
+      }
+      if (/^(localhost|127\.0\.0\.1)(:\d+)?(\/.*)?$/i.test(query)) {
+        window.location.href = 'http://' + query;
+        return;
+      }
+      if (/^[a-z0-9-]+(\.[a-z0-9-]+)+(\/.*)?$/i.test(query) && !query.includes(' ')) {
+        window.location.href = 'https://' + query;
+        return;
+      }
+
+      // Otherwise, search with selected engine
+      const searchUrl = ENGINES[selectedEngine] || ENGINES.google;
+      window.location.href = searchUrl + encodeURIComponent(query);
+    });
+
+    // Sync theme from localStorage if available
+    try {
+      const savedTheme = localStorage.getItem('rays_theme');
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    } catch (_e) {}
+  </script>
+</body>
+</html>

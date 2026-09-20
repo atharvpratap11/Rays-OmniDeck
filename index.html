@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' file: data: https:; font-src 'self' data:;">
+  <title>Rays OmniDeck</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Top Row: Tab Strip with Native macOS Traffic Light Spacing -->
+    <div class="tab-strip-container">
+      <div id="tab-list" class="tab-list">
+        <!-- Tabs rendered dynamically with drag-and-drop -->
+      </div>
+
+      <!-- Quick Add Tab Button & Dropdown -->
+      <div class="tab-add-container">
+        <button id="add-tab-btn" class="tab-add-btn" title="New Tab (Instant)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Second Row: Minimal Dedicated Navigation Toolbar -->
+    <div id="toolbar" class="toolbar-container">
+      <!-- Navigation Controls -->
+      <div class="nav-buttons">
+        <button id="nav-back-btn" class="nav-btn" title="Back [Cmd+[]" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <button id="nav-forward-btn" class="nav-btn" title="Forward [Cmd+]]" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+        <button id="nav-reload-btn" class="nav-btn" title="Reload Tab [Cmd+R]">
+          <svg id="reload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 4v6h-6"/>
+            <path d="M1 20v-6h6"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+          <svg id="stop-icon" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        <button id="nav-home-btn" class="nav-btn" title="Home [Cmd+H]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Address / Search Bar -->
+      <form id="address-form" class="address-bar-wrapper">
+        <div class="url-security-icon" title="Isolated Session">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <input 
+          type="text" 
+          id="address-input" 
+          class="address-input" 
+          placeholder="Enter URL (e.g. localhost:3000 or abhi.health)... [Cmd+L]" 
+          autocomplete="off" 
+          spellcheck="false"
+        >
+        <button type="submit" class="url-submit-btn" title="Go [Enter]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </form>
+
+      <!-- Role Selector Dropdown -->
+      <div class="role-select-wrapper" title="Role Persona">
+        <span id="role-select-dot" class="role-select-dot"></span>
+        <select id="role-selector" class="role-select">
+          <option value="RoleA">Role: Role A</option>
+          <option value="RoleB">Role: Role B</option>
+          <option value="RoleC">Role: Role C</option>
+          <option value="RoleD">Role: Role D</option>
+          <option value="RoleE">Role: Role E</option>
+          <option value="RoleF">Role: Role F</option>
+          <option value="__NEW_ROLE__">+ New Custom Role...</option>
+        </select>
+        <button id="edit-role-btn" class="role-edit-btn" title="Edit this role's name & color">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Unified Icon-Only Actions (Right Side of URL Bar) -->
+      <div class="toolbar-actions">
+        <!-- Gemini AI Sandbox Assistant Button (Left of Mobile Port Button) -->
+        <button id="gemini-btn" class="icon-action-btn" title="Gemini AI Sandbox Assistant">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+            <path d="M12 2L14.4 8.6L21 11L14.4 13.4L12 20L9.6 13.4L3 11L9.6 8.6L12 2Z" fill="url(#gemini-grad)" stroke="url(#gemini-grad)" stroke-width="1.2"/>
+            <defs>
+              <linearGradient id="gemini-grad" x1="3" y1="2" x2="21" y2="20" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8"/>
+                <stop offset="0.5" stop-color="#818cf8"/>
+                <stop offset="1" stop-color="#c084fc"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </button>
+
+        <!-- Phone Mode (Mobile Viewport Emulation) -->
+        <button id="phone-mode-btn" class="icon-action-btn" title="Toggle Responsive Device Viewport [Cmd+Shift+M]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="6" y="2" width="12" height="20" rx="3" ry="3"/>
+            <line x1="11" y1="18" x2="13" y2="18"/>
+          </svg>
+        </button>
+
+        <!-- Split View -->
+        <button id="split-view-btn" class="icon-action-btn" title="Toggle Side-by-Side Split View [Cmd+Shift+S]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="12" y1="3" x2="12" y2="21"/>
+          </svg>
+        </button>
+
+        <!-- Extensions -->
+        <button id="extensions-btn" class="icon-action-btn" title="Extensions & Add-ons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/>
+            <line x1="16" y1="8" x2="2" y2="22"/>
+            <line x1="17.5" y1="15" x2="9" y2="15"/>
+          </svg>
+        </button>
+
+        <!-- Cookies -->
+        <button id="inspect-cookies-btn" class="icon-action-btn" title="Inspect Partition Cookies [Cmd+Shift+C]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+            <path d="M2 12h20"/>
+          </svg>
+        </button>
+
+        <!-- Inspect DevTools -->
+        <button id="devtools-btn" class="icon-action-btn" title="Inspect Active Tab (DevTools) [Cmd+Shift+I / F12]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 18 22 12 16 6"/>
+            <polyline points="8 6 2 12 8 18"/>
+          </svg>
+        </button>
+
+        <!-- Light / Dark / Auto Theme Toggle -->
+        <button id="theme-toggle-btn" class="icon-action-btn" title="Theme Mode (Auto / Light / Dark) [Cmd+Shift+T]">
+          <!-- Auto/Desktop icon (active when syncing with macOS) -->
+          <svg id="theme-auto-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+          <!-- Sun icon (shown in dark mode or forced light) -->
+          <svg id="theme-sun-icon" style="display: none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <!-- Moon icon (shown in light mode or forced dark) -->
+          <svg id="theme-moon-icon" style="display: none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+
+        <!-- Check for Updates Button -->
+        <button id="check-updates-btn" class="icon-action-btn" title="Check for Browser Updates">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          <span id="update-badge-dot" class="update-badge-dot" style="display: none;"></span>
+        </button>
+      </div>
+
+      <!-- Loading Progress Bar -->
+      <div id="loading-bar" class="loading-bar"></div>
+    </div>
+
+    <!-- Device Portview Controller Toolbar -->
+    <div id="device-toolbar" class="device-toolbar" style="display: none;">
+      <div class="device-toolbar-left">
+        <span class="device-toolbar-label">Device:</span>
+        <select id="device-preset-select" class="device-preset-select">
+          <optgroup label="Apple iPhone">
+            <option value="iphone-16-pro-max" data-w="430" data-h="932">iPhone 16 / 15 Pro Max (430 × 932)</option>
+            <option value="iphone-16" data-w="393" data-h="852" selected>iPhone 16 / 15 / 14 (393 × 852)</option>
+            <option value="iphone-13-mini" data-w="375" data-h="812">iPhone 13 mini / X (375 × 812)</option>
+            <option value="iphone-se" data-w="375" data-h="667">iPhone SE (375 × 667)</option>
+          </optgroup>
+          <optgroup label="Samsung Flagships">
+            <option value="samsung-s24-ultra" data-w="412" data-h="915">Galaxy S24 / S23 Ultra (412 × 915)</option>
+            <option value="samsung-s24" data-w="360" data-h="780">Galaxy S24 / S23 (360 × 780)</option>
+            <option value="samsung-fold-cover" data-w="344" data-h="882">Galaxy Z Fold (Cover: 344 × 882)</option>
+            <option value="samsung-fold-inner" data-w="829" data-h="700">Galaxy Z Fold (Inner: 829 × 700)</option>
+          </optgroup>
+          <optgroup label="Tablets (Vertical & Horizontal)">
+            <option value="ipad-pro-11-v" data-w="834" data-h="1194">iPad Pro 11" Vertical (834 × 1194)</option>
+            <option value="ipad-pro-11-h" data-w="1194" data-h="834">iPad Pro 11" Horizontal (1194 × 834)</option>
+            <option value="ipad-mini-v" data-w="744" data-h="1133">iPad Mini Vertical (744 × 1133)</option>
+            <option value="ipad-mini-h" data-w="1133" data-h="744">iPad Mini Horizontal (1133 × 744)</option>
+            <option value="galaxy-tab-v" data-w="800" data-h="1280">Galaxy Tab S9 Vertical (800 × 1280)</option>
+            <option value="galaxy-tab-h" data-w="1280" data-h="800">Galaxy Tab S9 Horizontal (1280 × 800)</option>
+          </optgroup>
+          <optgroup label="Custom Resizing">
+            <option value="custom" data-w="custom">Custom Drag & Stretch</option>
+          </optgroup>
+        </select>
+
+        <button id="device-rotate-btn" class="device-action-btn" title="Rotate Orientation (Portrait / Landscape)">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          <span>Rotate</span>
+        </button>
+      </div>
+
+      <div class="device-toolbar-center">
+        <span id="device-dimension-badge" class="device-dimension-badge">393 × 852 px</span>
+        <span class="device-drag-tip">↔ Drag left/right handles to stretch view</span>
+      </div>
+
+      <div class="device-toolbar-right">
+        <button id="device-fit-btn" class="device-action-btn" title="Fit to Available Window">Fit</button>
+        <button id="device-close-btn" class="device-action-btn close" title="Exit Device Viewport">&times; Exit</button>
+      </div>
+    </div>
+
+    <!-- Webview Host Container -->
+    <main id="webview-container">
+      <div id="device-resizer-left" class="device-resizer resizer-left" title="Drag to stretch viewport width" style="display: none;">
+        <div class="resizer-handle-pill"></div>
+      </div>
+      <div class="split-indicator-banner">
+        <span>◫ Dual Role Testing Active</span>
+      </div>
+      <div id="device-resizer-right" class="device-resizer resizer-right" title="Drag to stretch viewport width" style="display: none;">
+        <div class="resizer-handle-pill"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Extensions Modal -->
+  <div id="extensions-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/>
+            <line x1="16" y1="8" x2="2" y2="22"/>
+          </svg>
+          <span>Extensions & Plugins</span>
+        </div>
+        <button class="modal-close-btn" data-close="extensions-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+          <div style="font-weight: 600; color: var(--brand-primary); margin-bottom: 4px;">🧩 Extension Sandboxing Active</div>
+          <p style="font-size: 12px; color: var(--text-muted);">Standard third-party browser extensions are sandboxed per tab to prevent session tampering between simulated roles.</p>
+        </div>
+        <p style="font-size: 12px; color: var(--text-secondary);">Custom role injection scripts, token injection utilities, and HL7/FHIR tools can be attached via DevTools.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn" data-close="extensions-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cookie Inspector Modal -->
+  <div id="cookie-modal" class="modal-overlay">
+    <div class="modal-card" style="width: 540px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🍪 Partition Cookies</span>
+        </div>
+        <button class="modal-close-btn" data-close="cookie-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span id="cookie-partition-label" style="font-family: monospace; font-size: 12px; color: var(--brand-primary);"></span>
+          <span id="cookie-count-label" style="font-size: 11px; color: var(--text-muted);"></span>
+        </div>
+        <div id="cookie-list" class="cookie-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="modal-clear-cookie-btn" class="modal-btn danger">Clear This Partition</button>
+        <button class="modal-btn" data-close="cookie-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Role Editor / Creation Modal -->
+  <div id="role-modal" class="modal-overlay">
+    <div class="modal-card" style="width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🎭 Custom Role Persona</span>
+        </div>
+        <button class="modal-close-btn" data-close="role-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 12px; font-size: 12px; color: var(--text-muted);">Configure custom testing personas for healthcare, SaaS, fintech, or multi-tenant platforms (e.g., Buyer, Seller, Workspace Owner, Editor).</p>
+        
+        <label style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; color: var(--text-muted);">Role Name</label>
+        <input type="text" id="role-name-input" class="address-input" style="width: 100%; height: 34px; padding: 0 10px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 14px;" placeholder="e.g. Org Admin, Tenant Manager, Buyer...">
+        
+        <label style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; color: var(--text-muted);">Role Tag Color</label>
+        <div id="role-color-palette" style="display: flex; gap: 8px; align-items: center; margin-bottom: 14px;">
+          <!-- Color circles generated in JS or static -->
+          <button type="button" class="color-choice active" data-color="#10b981" style="background: #10b981;"></button>
+          <button type="button" class="color-choice" data-color="#0ea5e9" style="background: #0ea5e9;"></button>
+          <button type="button" class="color-choice" data-color="#3b82f6" style="background: #3b82f6;"></button>
+          <button type="button" class="color-choice" data-color="#8b5cf6" style="background: #8b5cf6;"></button>
+          <button type="button" class="color-choice" data-color="#ec4899" style="background: #ec4899;"></button>
+          <button type="button" class="color-choice" data-color="#f59e0b" style="background: #f59e0b;"></button>
+          <button type="button" class="color-choice" data-color="#ef4444" style="background: #ef4444;"></button>
+          <button type="button" class="color-choice" data-color="#06b6d4" style="background: #06b6d4;"></button>
+          <button type="button" class="color-choice" data-color="#64748b" style="background: #64748b;"></button>
+        </div>
+
+        <label style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; color: var(--text-muted);">Description / Purpose (Optional)</label>
+        <input type="text" id="role-desc-input" class="address-input" style="width: 100%; height: 34px; padding: 0 10px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md);" placeholder="e.g. Multi-tenant SaaS Admin">
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn" data-close="role-modal">Cancel</button>
+        <button id="save-role-btn" class="modal-btn" style="background: var(--brand-primary); color: #fff; border-color: var(--brand-primary);">Save Role</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gemini AI Assistant Drawer / Flyout -->
+  <div id="gemini-drawer" class="gemini-drawer">
+    <div class="gemini-drawer-header">
+      <div class="gemini-title-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L14.4 8.6L21 11L14.4 13.4L12 20L9.6 13.4L3 11L9.6 8.6L12 2Z" fill="url(#gemini-grad-drawer)"/>
+          <defs>
+            <linearGradient id="gemini-grad-drawer" x1="3" y1="2" x2="21" y2="20" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#38bdf8"/>
+              <stop offset="0.5" stop-color="#818cf8"/>
+              <stop offset="1" stop-color="#c084fc"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="gemini-drawer-title">Gemini AI Sandbox Copilot</span>
+      </div>
+      <button id="gemini-drawer-close" class="modal-close-btn">&times;</button>
+    </div>
+
+    <div class="gemini-drawer-body">
+      <p class="gemini-drawer-desc">Instant QA assistance: Generate synthetic patient/user profiles, simulate edge-case prescriptions, and draft test reports.</p>
+      
+      <div class="gemini-quick-prompts">
+        <button class="gemini-prompt-chip" data-prompt="Generate 5 realistic patient records with vitals (BP, heart rate, SPO2), chief complaints, and past medical history in JSON">🧑‍⚕️ 5 Synthetic Patient Profiles</button>
+        <button class="gemini-prompt-chip" data-prompt="Create 5 pharmacy prescription test payloads with drug names, dosages, frequencies, and allergy contraindications in JSON">💊 5 Prescription Test Payloads</button>
+        <button class="gemini-prompt-chip" data-prompt="List 8 concurrent test scenarios for Doctor, Patient, Pharmacist and Pathology roles testing simultaneous workflows">🧪 Multi-Role Test Scenarios</button>
+        <button class="gemini-prompt-chip" data-prompt="Draft a structured QA bug report template for a session bleeding and cookie leakage vulnerability">🐞 QA Bug Report Template</button>
+      </div>
+
+      <div class="gemini-chat-container">
+        <div id="gemini-chat-output" class="gemini-chat-output">
+          <div class="gemini-msg assistant">
+            <span class="gemini-msg-sparkle">✨</span>
+            <div class="gemini-msg-text">Ready to assist your testing session! Click a quick prompt chip above or type any test data request below.</div>
+          </div>
+        </div>
+        <form id="gemini-chat-form" class="gemini-chat-form">
+          <input type="text" id="gemini-chat-input" class="gemini-chat-input" placeholder="Ask Gemini for test data, edge cases, or schemas..." autocomplete="off">
+          <button type="submit" class="gemini-chat-send" title="Send Request">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+
+      <div class="gemini-drawer-footer">
+        <button id="open-gemini-tab-btn" class="open-gemini-tab-btn">
+          <span>Open Full Google Gemini in Isolated Role Tab</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-Browser Floating Auto-Update Banner -->
+  <div id="update-banner" class="update-banner" style="display: none;">
+    <div class="update-banner-content">
+      <div class="update-banner-icon">🚀</div>
+      <div class="update-banner-info">
+        <span id="update-banner-title" class="update-banner-title">Update Ready</span>
+        <span id="update-banner-desc" class="update-banner-desc">A new version of Rays OmniDeck is ready.</span>
+        <div id="update-progress-bar-wrap" class="update-progress-bar-wrap" style="display: none;">
+          <div id="update-progress-bar-fill" class="update-progress-bar-fill" style="width: 0%;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="update-banner-actions">
+      <button id="update-restart-btn" class="modal-btn update-restart-btn" style="display: none;">Restart to Update</button>
+      <button id="update-dismiss-btn" class="modal-btn">Later</button>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
