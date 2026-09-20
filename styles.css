@@ -662,10 +662,18 @@ body, html {
   outline: none;
   cursor: pointer;
   transition: border-color 0.15s ease;
+  max-width: 220px;
 }
 
 .device-preset-select:focus {
   border-color: var(--brand-primary);
+}
+
+.device-preset-select option,
+.device-preset-select optgroup {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
 }
 
 .device-action-btn {

@@ -185,11 +185,12 @@
       background-color: var(--pill-bg);
     }
 
-    /* Engine Selector Pills */
-    .engine-selector {
+    /* Engine Selector Dropdown */
+    .engine-selector-wrap {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      margin-bottom: 20px;
     }
 
     .engine-label {
@@ -198,32 +199,108 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: var(--subtext-color);
-      margin-right: 4px;
     }
 
-    .engine-pill {
-      background-color: var(--pill-bg);
+    .engine-dropdown {
+      background-color: var(--input-bg);
       border: 1px solid var(--border-color);
-      color: var(--subtext-color);
-      padding: 4px 12px;
-      border-radius: 16px;
-      font-size: 12px;
+      color: var(--text-color);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.15s ease;
       outline: none;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     }
 
-    .engine-pill:hover {
-      color: var(--text-color);
+    .engine-dropdown:focus {
       border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px rgba(0, 82, 255, 0.2);
     }
 
-    .engine-pill.active {
-      background-color: var(--pill-active-bg);
-      border-color: var(--pill-active-border);
-      color: var(--pill-active-color);
+    .engine-dropdown option {
+      background-color: var(--input-bg);
+      color: var(--text-color);
+    }
+
+    /* Wallpaper Customization Bar */
+    .wallpaper-control-bar {
+      position: fixed;
+      bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(14, 22, 38, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 14px;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      z-index: 100;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    @media (prefers-color-scheme: light) {
+      .wallpaper-control-bar {
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+      }
+    }
+
+    html[data-theme="light"] .wallpaper-control-bar {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .wallpaper-label {
+      font-size: 11px;
       font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--subtext-color);
+    }
+
+    .wallpaper-dropdown {
+      background: transparent;
+      border: none;
+      color: var(--text-color);
+      font-size: 12px;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .wallpaper-dropdown option {
+      background-color: #0e1626;
+      color: #f8fafc;
+    }
+
+    html[data-theme="light"] .wallpaper-dropdown option {
+      background-color: #ffffff;
+      color: #0f172a;
+    }
+
+    .wallpaper-custom-btn {
+      background: rgba(0, 82, 255, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(0, 82, 255, 0.4);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .wallpaper-custom-btn:hover {
+      background: #0052ff;
+      color: #fff;
     }
   </style>
 </head>
@@ -246,7 +323,7 @@
           type="text" 
           id="search-input" 
           class="search-input" 
-          placeholder="Search with Google, DuckDuckGo, Yahoo or enter URL..." 
+          placeholder="Search the web or enter URL..." 
           autofocus 
           autocomplete="off" 
           spellcheck="false"
@@ -260,46 +337,150 @@
       </div>
     </form>
 
-    <div class="engine-selector">
-      <span class="engine-label">Engine:</span>
-      <button type="button" class="engine-pill active" data-engine="google">Google</button>
-      <button type="button" class="engine-pill" data-engine="duckduckgo">DuckDuckGo</button>
-      <button type="button" class="engine-pill" data-engine="yahoo">Yahoo</button>
+    <!-- Search Engine Selector Dropdown -->
+    <div class="engine-selector-wrap">
+      <span class="engine-label">Search Engine:</span>
+      <select id="engine-select" class="engine-dropdown" title="Choose Search Engine">
+        <option value="google" data-engine="google">Google</option>
+        <option value="duckduckgo" data-engine="duckduckgo">DuckDuckGo</option>
+        <option value="bing" data-engine="bing">Microsoft Bing</option>
+        <option value="yahoo" data-engine="yahoo">Yahoo</option>
+        <option value="brave" data-engine="brave">Brave Search</option>
+        <option value="ecosia" data-engine="ecosia">Ecosia</option>
+        <option value="startpage" data-engine="startpage">Startpage</option>
+        <option value="yandex" data-engine="yandex">Yandex</option>
+        <option value="baidu" data-engine="baidu">Baidu</option>
+      </select>
     </div>
+  </div>
+
+  <!-- Wallpaper Switcher Bar -->
+  <div class="wallpaper-control-bar">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+      <circle cx="8.5" cy="8.5" r="1.5"/>
+      <polyline points="21 15 16 10 5 21"/>
+    </svg>
+    <span class="wallpaper-label">Wallpaper:</span>
+    <select id="wallpaper-select" class="wallpaper-dropdown" title="Change Home Wallpaper">
+      <option value="aurora">Cosmic Aurora (Default)</option>
+      <option value="cyber-mesh">Deep Tech Mesh</option>
+      <option value="gradient-dark">Midnight Gradient</option>
+      <option value="sunset-glow">Sunset Glow</option>
+      <option value="clean-slate">Clean Minimal Slate</option>
+      <option value="custom">Custom Image URL...</option>
+    </select>
+    <button id="wallpaper-upload-btn" class="wallpaper-custom-btn" title="Choose Local Wallpaper Image">
+      <span>Upload</span>
+    </button>
+    <input type="file" id="wallpaper-file-input" accept="image/*" style="display: none;">
   </div>
 
   <script>
     const searchForm = document.getElementById('search-form');
     const searchInput = document.getElementById('search-input');
-    const enginePills = document.querySelectorAll('.engine-pill');
+    const engineSelect = document.getElementById('engine-select');
+    const wallpaperSelect = document.getElementById('wallpaper-select');
+    const wallpaperUploadBtn = document.getElementById('wallpaper-upload-btn');
+    const wallpaperFileInput = document.getElementById('wallpaper-file-input');
 
     const ENGINES = {
       google: 'https://www.google.com/search?q=',
       duckduckgo: 'https://duckduckgo.com/?q=',
-      yahoo: 'https://search.yahoo.com/search?p='
+      bing: 'https://www.bing.com/search?q=',
+      yahoo: 'https://search.yahoo.com/search?p=',
+      brave: 'https://search.brave.com/search?q=',
+      ecosia: 'https://www.ecosia.org/search?q=',
+      startpage: 'https://www.startpage.com/sp/search?query=',
+      yandex: 'https://yandex.com/search/?text=',
+      baidu: 'https://www.baidu.com/s?wd='
     };
 
+    const WALLPAPERS = {
+      'aurora': 'radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.45) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(88, 28, 135, 0.4) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(14, 116, 144, 0.35) 0px, transparent 50%), radial-gradient(at 0% 100%, rgba(15, 23, 42, 0.9) 0px, transparent 50%), #070b14',
+      'cyber-mesh': 'radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.15) 0%, transparent 60%), linear-gradient(135deg, #090d16 0%, #030712 100%)',
+      'gradient-dark': 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%)',
+      'sunset-glow': 'radial-gradient(circle at 20% 20%, rgba(244, 63, 94, 0.25) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.2) 0%, transparent 50%), #090d16',
+      'clean-slate': '#070b14'
+    };
+
+    // 1. Initialize Engine Dropdown
     let selectedEngine = localStorage.getItem('rays_engine') || 'google';
-
-    function setEngine(engine) {
-      if (!ENGINES[engine]) return;
-      selectedEngine = engine;
-      localStorage.setItem('rays_engine', engine);
-
-      enginePills.forEach(pill => {
-        pill.classList.toggle('active', pill.getAttribute('data-engine') === engine);
+    if (!ENGINES[selectedEngine]) selectedEngine = 'google';
+    if (engineSelect) {
+      engineSelect.value = selectedEngine;
+      engineSelect.addEventListener('change', () => {
+        selectedEngine = engineSelect.value;
+        localStorage.setItem('rays_engine', selectedEngine);
+        searchInput.focus();
       });
     }
 
-    setEngine(selectedEngine);
+    // 2. Initialize Wallpaper
+    function applyWallpaper(wpKey, customUrl = null) {
+      if (customUrl) {
+        document.body.style.backgroundImage = `url("${customUrl}")`;
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundRepeat = 'no-repeat';
+        localStorage.setItem('rays_wallpaper_type', 'custom');
+        localStorage.setItem('rays_wallpaper_url', customUrl);
+        if (wallpaperSelect) wallpaperSelect.value = 'custom';
+        return;
+      }
 
-    enginePills.forEach(pill => {
-      pill.addEventListener('click', () => {
-        setEngine(pill.getAttribute('data-engine'));
-        searchInput.focus();
+      const wpStyle = WALLPAPERS[wpKey] || WALLPAPERS['aurora'];
+      document.body.style.background = wpStyle;
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundRepeat = 'no-repeat';
+      localStorage.setItem('rays_wallpaper_type', wpKey);
+      localStorage.removeItem('rays_wallpaper_url');
+      if (wallpaperSelect) wallpaperSelect.value = wpKey;
+    }
+
+    const savedWpType = localStorage.getItem('rays_wallpaper_type') || 'aurora';
+    const savedWpUrl = localStorage.getItem('rays_wallpaper_url');
+    if (savedWpType === 'custom' && savedWpUrl) {
+      applyWallpaper('custom', savedWpUrl);
+    } else {
+      applyWallpaper(savedWpType);
+    }
+
+    if (wallpaperSelect) {
+      wallpaperSelect.addEventListener('change', () => {
+        const val = wallpaperSelect.value;
+        if (val === 'custom') {
+          const userUrl = prompt('Enter image URL for wallpaper:');
+          if (userUrl && userUrl.trim()) {
+            applyWallpaper('custom', userUrl.trim());
+          } else {
+            wallpaperSelect.value = localStorage.getItem('rays_wallpaper_type') || 'aurora';
+          }
+        } else {
+          applyWallpaper(val);
+        }
       });
-    });
+    }
 
+    if (wallpaperUploadBtn && wallpaperFileInput) {
+      wallpaperUploadBtn.addEventListener('click', () => {
+        wallpaperFileInput.click();
+      });
+
+      wallpaperFileInput.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (loadEvt) => {
+          const dataUrl = loadEvt.target.result;
+          applyWallpaper('custom', dataUrl);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 3. Search Form Submit
     searchForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const query = searchInput.value.trim();
@@ -324,10 +505,10 @@
       window.location.href = searchUrl + encodeURIComponent(query);
     });
 
-    // Sync theme from localStorage if available
+    // 4. Sync theme from localStorage if available
     try {
-      const savedTheme = localStorage.getItem('rays_theme');
-      if (savedTheme) {
+      const savedTheme = localStorage.getItem('rays_theme_mode') || localStorage.getItem('rays_theme');
+      if (savedTheme && savedTheme !== 'auto' && savedTheme !== 'system') {
         document.documentElement.setAttribute('data-theme', savedTheme);
       }
     } catch (_e) {}

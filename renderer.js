@@ -162,6 +162,7 @@ const openGeminiTabBtn = document.getElementById('open-gemini-tab-btn');
 const deviceToolbar = document.getElementById('device-toolbar');
 const devicePresetSelect = document.getElementById('device-preset-select');
 const deviceRotateBtn = document.getElementById('device-rotate-btn');
+const deviceResetBtn = document.getElementById('device-reset-btn');
 const deviceDimensionBadge = document.getElementById('device-dimension-badge');
 const deviceFitBtn = document.getElementById('device-fit-btn');
 const deviceCloseBtn = document.getElementById('device-close-btn');
@@ -236,10 +237,10 @@ function populateRoleSelectorOptions(selectedKey = null) {
 
 /**
  * Theme initialization, macOS synchronization and manual toggling
- * Cycles: system -> light -> dark -> system
+ * Smart 2-mode: Dark and Light, auto-detected from system and user-toggleable
  */
 async function initTheme() {
-  const savedMode = localStorage.getItem('rays_theme_mode') || 'system';
+  const savedMode = localStorage.getItem('rays_theme_mode') || 'auto';
   await applyThemeMode(savedMode, false);
 }
 
@@ -247,57 +248,39 @@ async function applyThemeMode(mode, showNotification = true) {
   state.themeMode = mode;
   localStorage.setItem('rays_theme_mode', mode);
 
-  let effectiveDark = false;
+  let isDark = false;
+  let systemIsDark = false;
 
-  if (mode === 'system') {
-    if (window.abhiSandbox?.setThemeSource) {
-      const info = await window.abhiSandbox.setThemeSource('system');
-      effectiveDark = info.shouldUseDarkColors;
-    } else {
-      effectiveDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-
-    if (themeAutoIcon) themeAutoIcon.style.display = 'block';
-    if (themeSunIcon) themeSunIcon.style.display = 'none';
-    if (themeMoonIcon) themeMoonIcon.style.display = 'none';
-    themeToggleBtn.title = `Theme: Auto / System (${effectiveDark ? 'Dark' : 'Light'}) - Click to switch to Light`;
-    if (showNotification) showToast(`Theme: Synced with macOS (${effectiveDark ? 'Dark' : 'Light'})`, 'info');
-  } else if (mode === 'light') {
-    if (window.abhiSandbox?.setThemeSource) {
-      await window.abhiSandbox.setThemeSource('light');
-    }
-    effectiveDark = false;
-    if (themeAutoIcon) themeAutoIcon.style.display = 'none';
-    if (themeSunIcon) themeSunIcon.style.display = 'block';
-    if (themeMoonIcon) themeMoonIcon.style.display = 'none';
-    themeToggleBtn.title = 'Theme: Light (Manual) - Click to switch to Dark';
-    if (showNotification) showToast('Theme: Light (Manual override)', 'info');
-  } else if (mode === 'dark') {
-    if (window.abhiSandbox?.setThemeSource) {
-      await window.abhiSandbox.setThemeSource('dark');
-    }
-    effectiveDark = true;
-    if (themeAutoIcon) themeAutoIcon.style.display = 'none';
-    if (themeSunIcon) themeSunIcon.style.display = 'none';
-    if (themeMoonIcon) themeMoonIcon.style.display = 'block';
-    themeToggleBtn.title = 'Theme: Dark (Manual) - Click to switch to Auto (System)';
-    if (showNotification) showToast('Theme: Dark (Manual override)', 'info');
+  if (window.abhiSandbox?.setThemeSource) {
+    const info = await window.abhiSandbox.setThemeSource(mode === 'auto' ? 'system' : mode);
+    systemIsDark = info.shouldUseDarkColors;
+    isDark = mode === 'auto' ? systemIsDark : (mode === 'dark');
+  } else {
+    systemIsDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    isDark = mode === 'auto' ? systemIsDark : (mode === 'dark');
   }
 
-  const themeAttr = effectiveDark ? 'dark' : 'light';
+  if (isDark) {
+    if (themeSunIcon) themeSunIcon.style.display = 'block';
+    if (themeMoonIcon) themeMoonIcon.style.display = 'none';
+    if (themeAutoIcon) themeAutoIcon.style.display = 'none';
+    themeToggleBtn.title = 'Current: Dark — Click to switch to Light [Cmd+Shift+T]';
+    if (showNotification) showToast('Theme: Dark', 'info');
+  } else {
+    if (themeSunIcon) themeSunIcon.style.display = 'none';
+    if (themeMoonIcon) themeMoonIcon.style.display = 'block';
+    if (themeAutoIcon) themeAutoIcon.style.display = 'none';
+    themeToggleBtn.title = 'Current: Light — Click to switch to Dark [Cmd+Shift+T]';
+    if (showNotification) showToast('Theme: Light', 'info');
+  }
+
+  const themeAttr = isDark ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', themeAttr);
 }
 
 function cycleTheme() {
-  const currentMode = state.themeMode || 'system';
-  let nextMode = 'system';
-  if (currentMode === 'system') {
-    nextMode = 'light';
-  } else if (currentMode === 'light') {
-    nextMode = 'dark';
-  } else {
-    nextMode = 'system';
-  }
+  const currentAttr = document.documentElement.getAttribute('data-theme') || 'dark';
+  const nextMode = currentAttr === 'dark' ? 'light' : 'dark';
   applyThemeMode(nextMode, true);
 }
 
@@ -732,10 +715,13 @@ function bindIpcListeners() {
   if (window.abhiSandbox.onSystemThemeChanged) {
     window.abhiSandbox.onSystemThemeChanged((info) => {
       // If in automatic system matching mode, adapt immediately to macOS appearance
-      if (state.themeMode === 'system') {
-        const themeAttr = info.shouldUseDarkColors ? 'dark' : 'light';
+      if (state.themeMode === 'auto') {
+        const isDark = info.shouldUseDarkColors;
+        const themeAttr = isDark ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', themeAttr);
-        themeToggleBtn.title = `Theme: Auto / System (${info.shouldUseDarkColors ? 'Dark' : 'Light'}) - Click to switch to Light`;
+        if (themeSunIcon) themeSunIcon.style.display = isDark ? 'block' : 'none';
+        if (themeMoonIcon) themeMoonIcon.style.display = isDark ? 'none' : 'block';
+        themeToggleBtn.title = `Current: ${isDark ? 'Dark' : 'Light'} (Auto) — Click to switch [Cmd+Shift+T]`;
       }
     });
   }
@@ -1363,6 +1349,15 @@ function initDevicePortview() {
     });
   }
 
+  if (deviceResetBtn) {
+    deviceResetBtn.addEventListener('click', () => {
+      setDeviceDimensions(393, 852);
+      if (devicePresetSelect) {
+        devicePresetSelect.value = 'iphone-16';
+      }
+    });
+  }
+
   if (deviceFitBtn) {
     deviceFitBtn.addEventListener('click', () => {
       const maxW = Math.min(Math.round(webviewContainerEl.clientWidth - 80), 480);
@@ -1394,9 +1389,8 @@ function setDeviceDimensions(width, height) {
 }
 
 function setupDeviceResizers() {
-  const handles = [deviceResizerLeft, deviceResizerRight];
+  const handles = [deviceResizerLeft, deviceResizerRight].filter(Boolean);
   handles.forEach(handle => {
-    if (!handle) return;
     let isDragging = false;
 
     handle.addEventListener('mousedown', (e) => {
@@ -1437,12 +1431,22 @@ function setupDeviceResizers() {
 }
 
 /**
- * Gemini AI Sandbox QA Copilot
+ * Gemini AI Button: Direct Redirection to gemini.google.com in an isolated tab
  */
 function initGeminiCopilot() {
   if (geminiBtn) {
     geminiBtn.addEventListener('click', () => {
-      toggleGeminiDrawer();
+      // Direct redirection to Google Gemini in an isolated tab session
+      if (state.tabs.length < MAX_TABS) {
+        createTab({ role: 'RoleA', url: 'https://gemini.google.com', activate: true });
+      } else {
+        const activeTab = getActiveTab();
+        if (activeTab?.webview) {
+          activeTab.webview.loadURL('https://gemini.google.com');
+        } else {
+          showToast(`Maximum tab limit (${MAX_TABS}) reached.`, 'warning');
+        }
+      }
     });
   }
 
