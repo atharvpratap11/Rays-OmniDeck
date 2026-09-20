@@ -632,6 +632,22 @@ function initAutoUpdater() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
+  try {
+    const feedConfig = {
+      provider: 'github',
+      owner: 'atharvpratap11',
+      repo: 'omnideck',
+      private: true
+    };
+    const ghToken = process.env.GH_TOKEN || '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';
+    if (ghToken) {
+      feedConfig.token = ghToken;
+    }
+    autoUpdater.setFeedURL(feedConfig);
+  } catch (feedErr) {
+    console.warn('[AutoUpdater] setFeedURL notice:', feedErr.message);
+  }
+
   autoUpdater.on('checking-for-update', () => {
     console.log('[AutoUpdater] Checking for updates...');
     mainWindow?.webContents.send('updater:status', { status: 'checking' });
