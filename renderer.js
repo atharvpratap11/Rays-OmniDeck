@@ -795,7 +795,7 @@ function togglePhoneMode() {
     deviceToolbar.style.display = state.isPhoneMode ? 'flex' : 'none';
   }
   if (deviceResizerLeft) {
-    deviceResizerLeft.style.display = state.isPhoneMode ? 'flex' : 'none';
+    deviceResizerLeft.style.display = 'none';
   }
   if (deviceResizerRight) {
     deviceResizerRight.style.display = state.isPhoneMode ? 'flex' : 'none';
@@ -2131,12 +2131,20 @@ function initAutoUpdater() {
       console.warn('[AutoUpdater] Remote error:', data.error);
 
       if (updateBanner) {
-        updateBannerTitle.textContent = 'Auto-Update Notice';
-        updateBannerDesc.textContent = data.error || 'Update encountered an issue. You can get the latest release directly.';
+        updateBannerTitle.textContent = 'Update Available';
+        let friendlyDesc = 'A new version of Rays OmniDeck is ready to install.';
+        if (typeof data.error === 'string') {
+          if (data.error.includes('ZIP file') || data.error.includes('{') || data.error.includes('[')) {
+            friendlyDesc = 'A new release is ready. Click below to install.';
+          } else {
+            friendlyDesc = data.error.substring(0, 100);
+          }
+        }
+        updateBannerDesc.textContent = friendlyDesc;
         if (updateProgressBarWrap) updateProgressBarWrap.style.display = 'none';
         if (updateRestartBtn) {
           updateRestartBtn.style.display = 'inline-flex';
-          updateRestartBtn.textContent = 'Download Latest Release';
+          updateRestartBtn.textContent = 'Install Update';
           updateRestartBtn.disabled = false;
           updateRestartBtn.onclick = () => {
             window.abhiSandbox?.openExternal('https://github.com/atharvpratap11/omnideck/releases/latest');

@@ -1137,7 +1137,7 @@ body.platform-linux .tab-strip-container {
   position: relative;
 }
 
-/* Draggable Resizer Handles */
+/* Draggable Resizer Handles - Single Right Handle */
 .device-resizer {
   width: 24px;
   height: 120px;
@@ -1149,6 +1149,14 @@ body.platform-linux .tab-strip-container {
   user-select: none;
   flex-shrink: 0;
   margin: 0 10px;
+}
+
+#device-resizer-left {
+  display: none !important;
+}
+
+#device-resizer-right {
+  order: 999;
 }
 
 .resizer-handle-pill {
