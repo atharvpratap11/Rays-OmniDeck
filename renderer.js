@@ -1090,6 +1090,31 @@ function reorderTabs(sourceId, targetId, insertBeforeTarget) {
 }
 
 /**
+ * Single-pass loading progress bar triggers
+ */
+function startLoadingBar() {
+  if (!loadingBar) return;
+  loadingBar.classList.remove('finishing', 'fade-out');
+  loadingBar.classList.remove('active');
+  void loadingBar.offsetWidth; // Force DOM reflow to reset animation
+  loadingBar.classList.add('active');
+}
+
+function finishLoadingBar() {
+  if (!loadingBar) return;
+  if (loadingBar.classList.contains('active')) {
+    loadingBar.classList.remove('active');
+    loadingBar.classList.add('finishing');
+    setTimeout(() => {
+      loadingBar.classList.add('fade-out');
+      setTimeout(() => {
+        loadingBar.classList.remove('finishing', 'fade-out');
+      }, 250);
+    }, 180);
+  }
+}
+
+/**
  * Attach lifecycle & navigation events to webview instance
  */
 function attachWebviewListeners(tab) {
@@ -1099,7 +1124,7 @@ function attachWebviewListeners(tab) {
   webview.addEventListener('did-start-loading', () => {
     tab.isLoading = true;
     if (state.activeTabId === tab.id) {
-      loadingBar.classList.add('active');
+      startLoadingBar();
       reloadIcon.style.display = 'none';
       stopIcon.style.display = 'block';
     }
@@ -1108,7 +1133,7 @@ function attachWebviewListeners(tab) {
   webview.addEventListener('did-stop-loading', () => {
     tab.isLoading = false;
     if (state.activeTabId === tab.id) {
-      loadingBar.classList.remove('active');
+      finishLoadingBar();
       reloadIcon.style.display = 'block';
       stopIcon.style.display = 'none';
       updateNavButtons(tab);
@@ -1252,11 +1277,11 @@ function syncToolbar(tab) {
   if (tab.isLoading) {
     reloadIcon.style.display = 'none';
     stopIcon.style.display = 'block';
-    loadingBar.classList.add('active');
+    startLoadingBar();
   } else {
     reloadIcon.style.display = 'block';
     stopIcon.style.display = 'none';
-    loadingBar.classList.remove('active');
+    finishLoadingBar();
   }
 
   updateNavButtons(tab);
@@ -2051,7 +2076,22 @@ function initAutoUpdater() {
       showToast(`Update v${data.version} ready! Click Restart to Update.`, 'success');
     } else if (data.status === 'error') {
       if (checkUpdatesBtn) checkUpdatesBtn.classList.remove('loading');
-      console.warn('[AutoUpdater] Remote check:', data.error);
+      console.warn('[AutoUpdater] Remote error:', data.error);
+
+      if (updateBanner) {
+        updateBannerTitle.textContent = 'Auto-Update Notice';
+        updateBannerDesc.textContent = data.error || 'Update encountered an issue. You can get the latest release directly.';
+        if (updateProgressBarWrap) updateProgressBarWrap.style.display = 'none';
+        if (updateRestartBtn) {
+          updateRestartBtn.style.display = 'inline-flex';
+          updateRestartBtn.textContent = 'Download Latest Release';
+          updateRestartBtn.disabled = false;
+          updateRestartBtn.onclick = () => {
+            window.abhiSandbox?.openExternal('https://github.com/atharvpratap11/omnideck/releases/latest');
+          };
+        }
+        updateBanner.style.display = 'flex';
+      }
     }
   });
 
@@ -2061,7 +2101,13 @@ function initAutoUpdater() {
       updateProgressBarFill.style.width = `${data.percent}%`;
     }
     if (updateBannerDesc && data.percent !== undefined) {
-      updateBannerDesc.textContent = `Downloading update: ${data.percent}% complete...`;
+      let extra = '';
+      if (data.transferred && data.total) {
+        const mbTransferred = (data.transferred / (1024 * 1024)).toFixed(1);
+        const mbTotal = (data.total / (1024 * 1024)).toFixed(1);
+        extra = ` (${mbTransferred} MB / ${mbTotal} MB)`;
+      }
+      updateBannerDesc.textContent = `Downloading update: ${data.percent}%${extra}...`;
     }
   });
 }

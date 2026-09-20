@@ -33,8 +33,7 @@
     "publish": {
       "provider": "github",
       "owner": "atharvpratap11",
-      "repo": "omnideck",
-      "private": true
+      "repo": "omnideck"
     },
     "directories": {
       "output": "dist"

@@ -636,12 +636,10 @@ function initAutoUpdater() {
     const feedConfig = {
       provider: 'github',
       owner: 'atharvpratap11',
-      repo: 'omnideck',
-      private: true
+      repo: 'omnideck'
     };
-    const ghToken = process.env.GH_TOKEN || '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';
-    if (ghToken) {
-      feedConfig.token = ghToken;
+    if (process.env.GH_TOKEN) {
+      feedConfig.token = process.env.GH_TOKEN;
     }
     autoUpdater.setFeedURL(feedConfig);
   } catch (feedErr) {

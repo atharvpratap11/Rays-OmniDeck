@@ -673,28 +673,42 @@ body.platform-linux .tab-strip-container {
   height: 15px;
 }
 
-/* Loading Progress Bar */
+/* Loading Progress Bar - Realistic single-pass loading (Safari/Chrome style) */
 .loading-bar {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 2px;
+  height: 2.5px;
   width: 0%;
   background: var(--brand-gradient);
-  transition: width 0.2s ease, opacity 0.2s ease;
   z-index: 60;
   opacity: 0;
+  pointer-events: none;
+  transition: width 0.25s cubic-bezier(0.1, 0.5, 0.2, 1), opacity 0.2s ease;
 }
 
 .loading-bar.active {
   opacity: 1;
-  animation: pulseLoading 1.5s infinite linear;
+  animation: singlePassLoading 4s cubic-bezier(0.1, 0.45, 0.1, 1) forwards;
 }
 
-@keyframes pulseLoading {
-  0% { width: 10%; }
-  50% { width: 70%; }
-  100% { width: 95%; }
+.loading-bar.finishing {
+  animation: none !important;
+  opacity: 1;
+  width: 100% !important;
+  transition: width 0.18s ease-out, opacity 0.25s ease-out 0.12s;
+}
+
+.loading-bar.fade-out {
+  opacity: 0;
+}
+
+@keyframes singlePassLoading {
+  0% { width: 0%; }
+  15% { width: 35%; }
+  45% { width: 68%; }
+  75% { width: 85%; }
+  100% { width: 92%; }
 }
 
 /* ==========================================================================
