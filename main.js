@@ -213,12 +213,17 @@ function createWindow() {
     return { action: 'deny' };
   });
 
-  // Cybersecurity: Permission Request Gate
+  // Cybersecurity: Permission Request Gate - Disable notifications and restrict sensitive APIs
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    // Notifications explicitly disabled per user specification
+    if (permission === 'notifications') {
+      callback(false);
+      return;
+    }
+
     const allowedPermissions = [
       'clipboard-read',
       'clipboard-sanitized-write',
-      'notifications',
       'media',
       'camera',
       'microphone'

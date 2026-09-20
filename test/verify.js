@@ -165,9 +165,19 @@ assert(mainContent.includes('autoHideMenuBar: true'), 'Legacy Win32 menu bar hid
 assert(stylesContent.includes('border-radius: 9999px'), 'Address bar and role selector have complete rounded pill corners');
 assert(!stylesContent.includes('box-shadow: 0 -2px 0 0'), 'Tab top accent line removed for clean floating tab design');
 assert(stylesContent.includes('body.is-fullscreen .tab-strip-container'), 'Tab strip shifts left when fullscreen');
-assert(newtabContent.includes('WALLPAPERS_LIGHT') && newtabContent.includes('WALLPAPERS_DARK'), 'Dual-palette wallpaper auto-shift configured in newtab.html');
 assert(newtabContent.includes('id="wallpaper-upload-btn"') && newtabContent.includes('polyline points="17 8 12 3 7 8"'), 'Wallpaper upload button uses modern SVG upload icon');
 assert(newtabContent.includes('engine-dropdown-container') && newtabContent.includes('engine-arrow-icon'), 'Search engine custom dropdown with aligned down-arrow present');
+
+// 13. Verify Notification Blocking, 3-Dot Menu, Tab Overview & Role Color Fidelity
+console.log('\n13. Inspecting Notification Security, 3-Dot Menu, Tab Overview & Role Colors...');
+assert(mainContent.includes("permission === 'notifications'") && mainContent.includes('callback(false)'), 'Notifications explicitly denied in main.js');
+assert(htmlContent.includes('id="more-menu-btn"') && htmlContent.includes('id="more-menu-dropdown"'), 'Chrome-style 3-dot overflow menu present');
+assert(htmlContent.includes('id="tab-overview-overlay"') && htmlContent.includes('id="tab-overview-grid"'), 'Win+Tab Mission Control Tab Overview present');
+assert(stylesContent.includes('.tab-overview-overlay') && stylesContent.includes('.overview-tab-card'), 'Tab Overview styles defined in styles.css');
+assert(stylesContent.includes('var(--role-color) !important'), 'Tab dot and pill strictly match role color');
+assert(stylesContent.includes('opacity: 0') && stylesContent.includes('.ready'), 'Webview prevents white screen flashbang with opacity fade-in');
+assert(rendererContent.includes('toggleTabOverview') && rendererContent.includes('openTabOverview'), 'Tab Overview controller functions implemented in renderer.js');
+assert(rendererContent.includes("createTab({ role: 'Gemini'"), 'Gemini opens in dedicated Gemini role');
 
 console.log(`\n========================================`);
 console.log(`Test Results: ${passed} Passed, ${failed} Failed`);

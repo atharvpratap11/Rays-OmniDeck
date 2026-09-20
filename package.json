@@ -1,7 +1,7 @@
 {
   "name": "rays-omnideck",
   "productName": "Rays OmniDeck",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Minimal desktop testing browser with strict tab-level session isolation and multi-role testing",
   "main": "main.js",
   "scripts": {

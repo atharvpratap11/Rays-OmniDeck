@@ -30,6 +30,11 @@ const DEFAULT_ROLE_CONFIGS = {
     label: 'Role F',
     desc: 'Receptionist, Billing, Support, etc.'
   },
+  Gemini: {
+    color: '#818cf8',
+    label: 'Gemini',
+    desc: 'AI Assistant & Copilot Persona'
+  },
   Custom: {
     color: '#94a3b8',
     label: 'Custom',
@@ -116,9 +121,31 @@ const stopIcon = document.getElementById('stop-icon');
 const navHomeBtn = document.getElementById('nav-home-btn');
 const addressForm = document.getElementById('address-form');
 const addressInput = document.getElementById('address-input');
+const roleSelectWrapper = document.getElementById('role-select-wrapper');
 const roleSelector = document.getElementById('role-selector');
 const roleSelectDot = document.getElementById('role-select-dot');
+const roleSelectLabel = document.getElementById('role-select-label');
 const loadingBar = document.getElementById('loading-bar');
+
+// 3-Dot Overflow Menu Elements
+const moreMenuBtn = document.getElementById('more-menu-btn');
+const moreMenuDropdown = document.getElementById('more-menu-dropdown');
+const menuTabOverviewBtn = document.getElementById('menu-tab-overview-btn');
+const menuPhoneModeBtn = document.getElementById('menu-phone-mode-btn');
+const menuSplitViewBtn = document.getElementById('menu-split-view-btn');
+const menuExtensionsBtn = document.getElementById('menu-extensions-btn');
+const menuInspectCookiesBtn = document.getElementById('menu-inspect-cookies-btn');
+const menuDevtoolsBtn = document.getElementById('menu-devtools-btn');
+const menuThemeToggleBtn = document.getElementById('menu-theme-toggle-btn');
+const menuThemeLabel = document.getElementById('menu-theme-label');
+const menuCheckUpdatesBtn = document.getElementById('menu-check-updates-btn');
+
+// Tab Overview (Win+Tab) Elements
+const tabOverviewOverlay = document.getElementById('tab-overview-overlay');
+const tabOverviewGrid = document.getElementById('tab-overview-grid');
+const tabOverviewCloseBtn = document.getElementById('tab-overview-close-btn');
+const tabOverviewCount = document.getElementById('tab-overview-count');
+const overviewAddTabBtn = document.getElementById('overview-add-tab-btn');
 
 // Action Group Buttons
 const geminiBtn = document.getElementById('gemini-btn');
@@ -268,12 +295,14 @@ async function applyThemeMode(mode, showNotification = true) {
     if (themeSunIcon) themeSunIcon.style.display = 'block';
     if (themeMoonIcon) themeMoonIcon.style.display = 'none';
     if (themeAutoIcon) themeAutoIcon.style.display = 'none';
+    if (menuThemeLabel) menuThemeLabel.textContent = 'Switch to Light Mode';
     themeToggleBtn.title = 'Current: Dark — Click to switch to Light [Cmd+Shift+T]';
     if (showNotification) showToast('Theme: Dark', 'info');
   } else {
     if (themeSunIcon) themeSunIcon.style.display = 'none';
     if (themeMoonIcon) themeMoonIcon.style.display = 'block';
     if (themeAutoIcon) themeAutoIcon.style.display = 'none';
+    if (menuThemeLabel) menuThemeLabel.textContent = 'Switch to Dark Mode';
     themeToggleBtn.title = 'Current: Light — Click to switch to Dark [Cmd+Shift+T]';
     if (showNotification) showToast('Theme: Light', 'info');
   }
@@ -414,6 +443,121 @@ function bindGlobalEvents() {
     saveCustomRole();
   });
 
+  // Clicking role-select-wrapper opens the native role select
+  if (roleSelectWrapper) {
+    roleSelectWrapper.addEventListener('click', (e) => {
+      if (e.target.closest('#edit-role-btn')) return;
+      if (roleSelector) {
+        try {
+          if (typeof roleSelector.showPicker === 'function') {
+            roleSelector.showPicker();
+          } else {
+            roleSelector.focus();
+            roleSelector.click();
+          }
+        } catch (_e) {
+          roleSelector.focus();
+        }
+      }
+    });
+  }
+
+  // 3-Dot Overflow Menu Toggle
+  if (moreMenuBtn && moreMenuDropdown) {
+    moreMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = moreMenuDropdown.style.display !== 'none';
+      moreMenuDropdown.style.display = isVisible ? 'none' : 'block';
+    });
+
+    // Close 3-dot dropdown on external click
+    document.addEventListener('click', (e) => {
+      if (!moreMenuBtn.contains(e.target) && !moreMenuDropdown.contains(e.target)) {
+        moreMenuDropdown.style.display = 'none';
+      }
+    });
+  }
+
+  // 3-Dot Menu Actions
+  if (menuTabOverviewBtn) {
+    menuTabOverviewBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      openTabOverview();
+    });
+  }
+
+  if (menuPhoneModeBtn) {
+    menuPhoneModeBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      togglePhoneMode();
+    });
+  }
+
+  if (menuSplitViewBtn) {
+    menuSplitViewBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      toggleSplitView();
+    });
+  }
+
+  if (menuExtensionsBtn) {
+    menuExtensionsBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      openModal(extensionsModal);
+    });
+  }
+
+  if (menuInspectCookiesBtn) {
+    menuInspectCookiesBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      const activeTab = getActiveTab();
+      if (activeTab) openCookiesModal(activeTab);
+    });
+  }
+
+  if (menuDevtoolsBtn) {
+    menuDevtoolsBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      const activeTab = getActiveTab();
+      if (activeTab?.webview) activeTab.webview.openDevTools();
+    });
+  }
+
+  if (menuThemeToggleBtn) {
+    menuThemeToggleBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      cycleTheme();
+    });
+  }
+
+  if (menuCheckUpdatesBtn) {
+    menuCheckUpdatesBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      if (checkUpdatesBtn) checkUpdatesBtn.click();
+    });
+  }
+
+  // Tab Overview (Win+Tab) Handlers
+  if (tabOverviewCloseBtn) {
+    tabOverviewCloseBtn.addEventListener('click', closeTabOverview);
+  }
+
+  if (overviewAddTabBtn) {
+    overviewAddTabBtn.addEventListener('click', () => {
+      closeTabOverview();
+      addTabBtn.click();
+    });
+  }
+
+  // Close overview when clicking backdrop
+  if (tabOverviewOverlay) {
+    tabOverviewOverlay.addEventListener('click', (e) => {
+      if (e.target === tabOverviewOverlay) {
+        closeTabOverview();
+      }
+    });
+  }
+
   // Cookies Inspector Button
   inspectCookiesBtn.addEventListener('click', () => {
     const activeTab = getActiveTab();
@@ -538,6 +682,17 @@ function bindGlobalEvents() {
     else if (modifier && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'h') {
       e.preventDefault();
       goHome();
+    }
+    // Tab Overview (Win+Tab / Mission Control): Ctrl+Tab, Alt+Tab, or Cmd/Ctrl+Shift+O
+    else if ((e.ctrlKey && e.key === 'Tab') || (modifier && e.shiftKey && e.key.toLowerCase() === 'o')) {
+      e.preventDefault();
+      toggleTabOverview();
+    }
+    // Escape to close tab overview
+    else if (e.key === 'Escape') {
+      if (tabOverviewOverlay && tabOverviewOverlay.style.display !== 'none') {
+        closeTabOverview();
+      }
     }
   });
 }
@@ -1004,6 +1159,11 @@ function attachWebviewListeners(tab) {
     }
   });
 
+  // Smooth transition: eliminate white screen flashbang by revealing only when DOM is ready
+  webview.addEventListener('dom-ready', () => {
+    webview.classList.add('ready');
+  });
+
   webview.addEventListener('did-fail-load', (e) => {
     if (e.errorCode !== -3) { // Ignore aborted
       console.warn(`Tab ${tab.id} load error: ${e.errorDescription} (${e.errorCode})`);
@@ -1076,11 +1236,17 @@ function syncToolbar(tab) {
     addressInput.placeholder = 'Enter URL (e.g. localhost:3000 or abhi.health)...';
   }
 
-  // Role Selector
+  // Role Selector Pill
   roleSelector.value = tab.role;
   toolbar.style.setProperty('--current-role-color', roleConfig.color);
+  if (roleSelectWrapper) {
+    roleSelectWrapper.style.setProperty('--current-role-color', roleConfig.color);
+  }
   roleSelectDot.style.backgroundColor = roleConfig.color;
-  roleSelectDot.style.boxShadow = `0 0 6px ${roleConfig.color}`;
+  roleSelectDot.style.boxShadow = `0 0 8px ${roleConfig.color}`;
+  if (roleSelectLabel) {
+    roleSelectLabel.textContent = `Role: ${roleConfig.label}`;
+  }
 
   // Reload / Stop button state
   if (tab.isLoading) {
@@ -1125,6 +1291,13 @@ function setTabRole(tabId, newRole) {
   const pill = tab.tabEl.querySelector('.tab-role-pill');
   if (pill) {
     pill.textContent = roleConfig.label;
+    pill.style.color = roleConfig.color;
+    pill.style.borderColor = roleConfig.color;
+  }
+  const dot = tab.tabEl.querySelector('.tab-role-dot');
+  if (dot) {
+    dot.style.backgroundColor = roleConfig.color;
+    dot.style.boxShadow = `0 0 7px ${roleConfig.color}`;
   }
 
   if (state.activeTabId === tabId) {
@@ -1323,6 +1496,84 @@ function syncSplitView() {
   });
 }
 
+/**
+ * Mission Control / "Win+Tab" Overview Overlay Controller
+ */
+function toggleTabOverview() {
+  if (!tabOverviewOverlay) return;
+  const isVisible = tabOverviewOverlay.style.display !== 'none';
+  if (isVisible) {
+    closeTabOverview();
+  } else {
+    openTabOverview();
+  }
+}
+
+function openTabOverview() {
+  if (!tabOverviewOverlay || !tabOverviewGrid) return;
+
+  // Update tab count
+  if (tabOverviewCount) {
+    tabOverviewCount.textContent = `${state.tabs.length} Open Tabs`;
+  }
+
+  // Render cards for all open tabs
+  tabOverviewGrid.innerHTML = '';
+  state.tabs.forEach(tab => {
+    const roleConfig = ROLE_CONFIGS[tab.role] || ROLE_CONFIGS.Custom;
+    const isActive = tab.id === state.activeTabId;
+
+    const card = document.createElement('div');
+    card.className = `overview-tab-card ${isActive ? 'active-card' : ''}`;
+    card.style.setProperty('--card-role-color', roleConfig.color);
+
+    card.innerHTML = `
+      <div class="overview-card-header">
+        <div class="overview-card-role-tag">
+          <span class="overview-card-role-dot"></span>
+          <span>${escapeHtml(roleConfig.label)}</span>
+        </div>
+        <button class="overview-card-close-btn" title="Close Tab" data-close-tab="${tab.id}">&times;</button>
+      </div>
+
+      <div class="overview-card-body">
+        <div class="overview-card-title">${escapeHtml(tab.title || 'rays.foundation')}</div>
+        <div class="overview-card-url">${escapeHtml(tab.url || DEFAULT_URL)}</div>
+      </div>
+
+      <div class="overview-card-footer">
+        <div class="overview-card-status">
+          <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${isActive ? '#10b981' : '#64748b'};"></span>
+          <span>${isActive ? 'Active Tab' : 'Isolated Session'}</span>
+        </div>
+        <span>${tab.partition}</span>
+      </div>
+    `;
+
+    // Click card to switch to tab
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.overview-card-close-btn')) {
+        e.stopPropagation();
+        closeTab(tab.id);
+        openTabOverview(); // Refresh overview grid
+        return;
+      }
+      activateTab(tab.id);
+      closeTabOverview();
+    });
+
+    tabOverviewGrid.appendChild(card);
+  });
+
+  tabOverviewOverlay.style.display = 'flex';
+}
+
+function closeTabOverview() {
+  if (tabOverviewOverlay) {
+    tabOverviewOverlay.style.display = 'none';
+  }
+}
+
 function openModal(modal) {
   if (modal) modal.classList.add('show');
 }
@@ -1481,9 +1732,9 @@ function setupDeviceResizers() {
 function initGeminiCopilot() {
   if (geminiBtn) {
     geminiBtn.addEventListener('click', () => {
-      // Direct redirection to Google Gemini in an isolated tab session
+      // Direct redirection to Google Gemini in an isolated tab session with dedicated Gemini role
       if (state.tabs.length < MAX_TABS) {
-        createTab({ role: 'RoleA', url: 'https://gemini.google.com', activate: true });
+        createTab({ role: 'Gemini', url: 'https://gemini.google.com', activate: true });
       } else {
         const activeTab = getActiveTab();
         if (activeTab?.webview) {
