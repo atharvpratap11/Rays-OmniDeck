@@ -1,4 +1,4 @@
-# Rays OmniDeck ⚡
+# Rays OmniDeck 
 
 > **Minimal Multi-Role Desktop Testing Browser with Strict Partition Isolation & In-Browser Auto-Updates**
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
 1. **Strict Tab-Level Session Isolation:**
    - Every tab operates in an isolated Chromium session partition (`persist:tab_<id>`).
@@ -14,7 +14,7 @@
 2. **Auto-Updater Integration (`electron-updater`):**
    - Direct integration with GitHub repository: [`atharvpratap11/omnideck`](https://github.com/atharvpratap11/omnideck).
    - Silent background downloading with real-time download progress.
-   - Non-intrusive floating **"🚀 Update Ready — Restart to Update"** notification banner.
+   - Non-intrusive floating **" Update Ready — Restart to Update"** notification banner.
    - Manual **"Check for Updates"** button in the navigation toolbar.
 3. **Gemini AI Sandbox Copilot:**
    - Slide-out testing copilot drawer to generate synthetic patient profiles, prescription payloads, multi-role test scenarios, and bug reports.
@@ -28,7 +28,7 @@
 
 ---
 
-## 🔄 How to Push New Updates to Users
+## How to Push New Updates to Users
 
 When you make changes to the app and want users to receive updates automatically:
 
@@ -50,11 +50,11 @@ When you make changes to the app and want users to receive updates automatically
 4. **Publish the Release on GitHub:**
    - Review and hit **Publish release** on GitHub.
    - Any user currently running Rays OmniDeck will detect the update within seconds, download it silently in the background, and see:
-     **"🚀 Update Ready (v1.0.1)! [Restart to Update]"**.
+     **"Update Ready (v1.0.1)! [Restart to Update]"**.
 
 ---
 
-## 🛠️ Development & Testing
+## Development & Testing
 
 ```bash
 # Install dependencies
