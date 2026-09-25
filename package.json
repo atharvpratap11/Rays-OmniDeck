@@ -25,7 +25,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/atharvpratap11/omnideck.git"
+    "url": "https://github.com/atharvpratap11/Rays-OmniDeck.git"
   },
   "build": {
     "appId": "com.rays.omnideck",
@@ -33,7 +33,7 @@
     "publish": {
       "provider": "github",
       "owner": "atharvpratap11",
-      "repo": "omnideck"
+      "repo": "Rays-OmniDeck"
     },
     "directories": {
       "output": "dist"

@@ -825,7 +825,7 @@ function initAutoUpdater() {
     const feedConfig = {
       provider: 'github',
       owner: 'atharvpratap11',
-      repo: 'omnideck'
+      repo: 'Rays-OmniDeck'
     };
     if (process.env.GH_TOKEN) {
       feedConfig.token = process.env.GH_TOKEN;

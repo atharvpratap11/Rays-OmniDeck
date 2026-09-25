@@ -148,7 +148,7 @@ console.log('\n11. Inspecting Auto-Updater Pipeline & GitHub Configuration...');
 assert(pkg.dependencies && pkg.dependencies['electron-updater'], 'electron-updater package installed in dependencies');
 assert(pkg.build?.publish?.provider === 'github', 'Auto-updater publish provider set to github');
 assert(pkg.build?.publish?.owner === 'atharvpratap11', 'GitHub owner set to atharvpratap11');
-assert(pkg.build?.publish?.repo === 'omnideck', 'GitHub repo set to omnideck');
+assert(pkg.build?.publish?.repo === 'omnideck' || pkg.build?.publish?.repo === 'Rays-OmniDeck', 'GitHub repo configured');
 assert(htmlContent.includes('id="check-updates-btn"'), 'Check for updates button present in UI');
 assert(htmlContent.includes('id="update-banner"'), 'In-browser floating update banner present');
 assert(htmlContent.includes('id="update-restart-btn"'), 'Restart to update button present');

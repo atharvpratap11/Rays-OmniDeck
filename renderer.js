@@ -2283,7 +2283,7 @@ function initAutoUpdater() {
           updateRestartBtn.textContent = 'Install Update';
           updateRestartBtn.disabled = false;
           updateRestartBtn.onclick = () => {
-            window.abhiSandbox?.openExternal('https://github.com/atharvpratap11/omnideck/releases/latest');
+            window.abhiSandbox?.openExternal('https://github.com/atharvpratap11/Rays-OmniDeck/releases/latest');
           };
         }
         updateBanner.style.display = 'flex';
