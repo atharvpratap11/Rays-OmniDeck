@@ -21,7 +21,18 @@ contextBridge.exposeInMainWorld('abhiSandbox', {
   onInspectTab: (callback) => ipcRenderer.on('shortcut:inspect-tab', () => callback()),
   onInspectCookies: (callback) => ipcRenderer.on('shortcut:inspect-cookies', () => callback()),
   onGoHome: (callback) => ipcRenderer.on('shortcut:go-home', () => callback()),
+  onToggleHistory: (callback) => ipcRenderer.on('shortcut:toggle-history', () => callback()),
+  onToggleBookmarks: (callback) => ipcRenderer.on('shortcut:toggle-bookmarks', () => callback()),
+  onToggleTabOverview: (callback) => ipcRenderer.on('shortcut:toggle-tab-overview', () => callback()),
   onOpenUrlTab: (callback) => ipcRenderer.on('shortcut:open-url-tab', (_e, url) => callback(url)),
+
+  // Certificate, Extensions, Search & Dynamic Menu IPC
+  getCertificateInfo: (url) => ipcRenderer.invoke('security:get-cert-info', url),
+  loadExtension: () => ipcRenderer.invoke('extensions:load-unpacked'),
+  listExtensions: () => ipcRenderer.invoke('extensions:list'),
+  removeExtension: (id) => ipcRenderer.invoke('extensions:remove', id),
+  getSearchSuggestions: (query) => ipcRenderer.invoke('search:suggestions', query),
+  updateOpenTabsMenu: (tabs) => ipcRenderer.invoke('menu:update-tabs', tabs),
 
   // Backward compatibility aliases
   onMenuNewTab: (callback) => ipcRenderer.on('shortcut:new-tab', () => callback()),

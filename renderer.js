@@ -65,11 +65,36 @@ function isNewTabPage(url) {
   return url === DEFAULT_URL || url.endsWith('newtab.html') || (url.startsWith('file://') && url.includes('newtab.html'));
 }
 
-// Get the next role key in sequence
+// Get the next role key in sequence, intelligently reusing available lowest roles
 function getNextRole() {
-  const roleKeys = Object.keys(ROLE_CONFIGS).filter(k => k !== '__NEW_ROLE__');
-  if (roleKeys.length === 0) return 'RoleA';
-  return roleKeys[state.tabs.length % roleKeys.length];
+  const candidateKeys = Object.keys(ROLE_CONFIGS).filter(k => k !== '__NEW_ROLE__' && k !== 'Gemini' && k !== 'Custom');
+  const usedRoles = new Set(state.tabs.map(t => t.role));
+
+  // 1. Pick the first unused standard/custom role in progression (e.g. if Tab B is open and Tab A was closed, pick Role A!)
+  for (const key of candidateKeys) {
+    if (!usedRoles.has(key)) {
+      return key;
+    }
+  }
+
+  // 2. If all current candidate roles are in use, generate or pick next alphabet letter
+  for (let i = 0; i < 26; i++) {
+    const letter = String.fromCharCode(65 + i);
+    const roleKey = `Role${letter}`;
+    if (!usedRoles.has(roleKey)) {
+      if (!ROLE_CONFIGS[roleKey]) {
+        const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1'];
+        ROLE_CONFIGS[roleKey] = {
+          color: colors[i % colors.length],
+          label: `Role ${letter}`,
+          desc: `Persona ${letter}`
+        };
+      }
+      return roleKey;
+    }
+  }
+
+  return 'RoleA';
 }
 
 // Application State
@@ -126,11 +151,18 @@ const roleSelector = document.getElementById('role-selector');
 const roleSelectDot = document.getElementById('role-select-dot');
 const roleSelectLabel = document.getElementById('role-select-label');
 const loadingBar = document.getElementById('loading-bar');
+const securityBadgeBtn = document.getElementById('security-badge-btn');
+const bookmarkStarBtn = document.getElementById('bookmark-star-btn');
+const searchSuggestionsDropdown = document.getElementById('search-suggestions-dropdown');
+const sslCertPopover = document.getElementById('ssl-cert-popover');
+const toolbarPinnedTools = document.getElementById('toolbar-pinned-tools');
 
 // 3-Dot Overflow Menu Elements
 const moreMenuBtn = document.getElementById('more-menu-btn');
 const moreMenuDropdown = document.getElementById('more-menu-dropdown');
 const menuTabOverviewBtn = document.getElementById('menu-tab-overview-btn');
+const menuBookmarksBtn = document.getElementById('menu-bookmarks-btn');
+const menuHistoryBtn = document.getElementById('menu-history-btn');
 const menuPhoneModeBtn = document.getElementById('menu-phone-mode-btn');
 const menuSplitViewBtn = document.getElementById('menu-split-view-btn');
 const menuExtensionsBtn = document.getElementById('menu-extensions-btn');
@@ -138,6 +170,9 @@ const menuInspectCookiesBtn = document.getElementById('menu-inspect-cookies-btn'
 const menuDevtoolsBtn = document.getElementById('menu-devtools-btn');
 const menuThemeToggleBtn = document.getElementById('menu-theme-toggle-btn');
 const menuThemeLabel = document.getElementById('menu-theme-label');
+const menuRaysVaultBtn = document.getElementById('menu-rays-vault-btn');
+const menuRaysBlueBtn = document.getElementById('menu-rays-blue-btn');
+const menuRaysAppBtn = document.getElementById('menu-rays-app-btn');
 const menuCheckUpdatesBtn = document.getElementById('menu-check-updates-btn');
 
 // Tab Overview (Win+Tab) Elements
@@ -189,6 +224,8 @@ const deviceCloseBtn = document.getElementById('device-close-btn');
 const deviceResizerLeft = document.getElementById('device-resizer-left');
 const deviceResizerRight = document.getElementById('device-resizer-right');
 
+const toolbar = document.getElementById('toolbar');
+
 // Modals
 const extensionsModal = document.getElementById('extensions-modal');
 const cookieModal = document.getElementById('cookie-modal');
@@ -197,6 +234,21 @@ const cookiePartitionLabel = document.getElementById('cookie-partition-label');
 const cookieCountLabel = document.getElementById('cookie-count-label');
 const modalClearCookieBtn = document.getElementById('modal-clear-cookie-btn');
 const toastContainer = document.getElementById('toast-container');
+
+// Universal Bookmarks Modal Elements
+const bookmarksModal = document.getElementById('bookmarks-modal');
+const bookmarksSearchInput = document.getElementById('bookmarks-search-input');
+const bookmarksListEl = document.getElementById('bookmarks-list');
+
+// Browsing History Modal Elements
+const historyModal = document.getElementById('history-modal');
+const historySearchInput = document.getElementById('history-search-input');
+const historyListEl = document.getElementById('history-list');
+const clearHistoryBtn = document.getElementById('clear-history-btn');
+
+// Extensions Modal Elements
+const loadUnpackedExtBtn = document.getElementById('load-unpacked-ext-btn');
+const extensionsListEl = document.getElementById('extensions-list');
 
 // Role Editor Modal Elements
 const roleModal = document.getElementById('role-modal');
@@ -228,12 +280,16 @@ function init() {
   initGeminiCopilot();
   initDevicePortview();
   initAutoUpdater();
+  initPinnedTools();
+  initBookmarks();
+  initHistory();
+  initSearchSuggestions();
+  initSecurityCertificate();
+  initUniversalExtensions();
+  initEcosystemSuite();
 
-  // Create default set of 4 isolated role tabs starting with rays.foundation
+  // Create clean initial tab starting with rays.foundation
   createTab({ role: 'RoleA', url: DEFAULT_URL });
-  createTab({ role: 'RoleB', url: DEFAULT_URL });
-  createTab({ role: 'RoleC', url: DEFAULT_URL });
-  createTab({ role: 'RoleD', url: DEFAULT_URL });
 
   // Activate the first tab
   if (state.tabs.length > 0) {
@@ -252,7 +308,7 @@ function populateRoleSelectorOptions(selectedKey = null) {
     const role = ROLE_CONFIGS[key];
     const opt = document.createElement('option');
     opt.value = key;
-    opt.textContent = `Role: ${role.label}`;
+    opt.textContent = role.label;
     roleSelector.appendChild(opt);
   });
 
@@ -688,10 +744,33 @@ function bindGlobalEvents() {
       e.preventDefault();
       toggleTabOverview();
     }
-    // Escape to close tab overview
+    // Universal Bookmarks Modal: CmdOrCtrl+B
+    else if (modifier && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'b') {
+      e.preventDefault();
+      openModal(bookmarksModal);
+      renderBookmarksList();
+    }
+    // Bookmark Active Tab: CmdOrCtrl+D
+    else if (modifier && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'd') {
+      e.preventDefault();
+      toggleBookmarkActiveTab();
+    }
+    // Browsing History Modal: CmdOrCtrl+Y
+    else if (modifier && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'y') {
+      e.preventDefault();
+      openModal(historyModal);
+      renderHistoryList();
+    }
+    // Escape to close tab overview, search suggestions, or ssl cert popover
     else if (e.key === 'Escape') {
       if (tabOverviewOverlay && tabOverviewOverlay.style.display !== 'none') {
         closeTabOverview();
+      }
+      if (searchSuggestionsDropdown) {
+        searchSuggestionsDropdown.style.display = 'none';
+      }
+      if (sslCertPopover) {
+        sslCertPopover.style.display = 'none';
       }
     }
   });
@@ -886,6 +965,26 @@ function bindIpcListeners() {
     }
   });
 
+  if (window.abhiSandbox.onToggleHistory) {
+    window.abhiSandbox.onToggleHistory(() => {
+      openModal(historyModal);
+      renderHistoryList();
+    });
+  }
+
+  if (window.abhiSandbox.onToggleBookmarks) {
+    window.abhiSandbox.onToggleBookmarks(() => {
+      openModal(bookmarksModal);
+      renderBookmarksList();
+    });
+  }
+
+  if (window.abhiSandbox.onToggleTabOverview) {
+    window.abhiSandbox.onToggleTabOverview(() => {
+      toggleTabOverview();
+    });
+  }
+
   if (window.abhiSandbox.onFullscreenChanged) {
     window.abhiSandbox.onFullscreenChanged((isFullScreen) => {
       document.body.classList.toggle('is-fullscreen', isFullScreen);
@@ -933,7 +1032,8 @@ function createTab({ role = 'RoleA', url = DEFAULT_URL, activate = true } = {}) 
   state.tabCounter++;
   const tabId = `tab_${state.tabCounter}`;
   // Isolated persistent partition ensures zero cookie/storage bleed!
-  const partition = `persist:${tabId}`;
+  // Gemini gets dedicated partition for Google / Gemini account login
+  const partition = (role === 'Gemini') ? 'persist:gemini_session' : `persist:${tabId}`;
   const roleConfig = ROLE_CONFIGS[role] || ROLE_CONFIGS.Custom;
 
   // 1. Create Webview Element
@@ -1000,6 +1100,8 @@ function createTab({ role = 'RoleA', url = DEFAULT_URL, activate = true } = {}) 
   // Add to DOM
   tabListEl.appendChild(tabEl);
   webviewContainerEl.appendChild(webview);
+
+  syncMenuTabs();
 
   if (activate) {
     activateTab(tabId);
@@ -1087,6 +1189,8 @@ function reorderTabs(sourceId, targetId, insertBeforeTarget) {
   } else {
     tabListEl.insertBefore(sourceEl, targetEl.nextSibling);
   }
+
+  syncMenuTabs();
 }
 
 /**
@@ -1094,10 +1198,10 @@ function reorderTabs(sourceId, targetId, insertBeforeTarget) {
  */
 function startLoadingBar() {
   if (!loadingBar) return;
-  loadingBar.classList.remove('finishing', 'fade-out');
-  loadingBar.classList.remove('active');
-  void loadingBar.offsetWidth; // Force DOM reflow to reset animation
-  loadingBar.classList.add('active');
+  if (!loadingBar.classList.contains('active')) {
+    loadingBar.classList.remove('finishing', 'fade-out');
+    loadingBar.classList.add('active');
+  }
 }
 
 function finishLoadingBar() {
@@ -1120,13 +1224,26 @@ function finishLoadingBar() {
 function attachWebviewListeners(tab) {
   const { webview, tabEl } = tab;
 
-  // Loading states
+  // Loading states: smooth single-pass progress bar, ignoring iframe/subresource jitter
+  webview.addEventListener('did-start-navigation', (e) => {
+    if (e.isMainFrame) {
+      tab.isLoading = true;
+      if (state.activeTabId === tab.id) {
+        startLoadingBar();
+        reloadIcon.style.display = 'none';
+        stopIcon.style.display = 'block';
+      }
+    }
+  });
+
   webview.addEventListener('did-start-loading', () => {
-    tab.isLoading = true;
-    if (state.activeTabId === tab.id) {
-      startLoadingBar();
-      reloadIcon.style.display = 'none';
-      stopIcon.style.display = 'block';
+    if (!tab.isLoading) {
+      tab.isLoading = true;
+      if (state.activeTabId === tab.id) {
+        startLoadingBar();
+        reloadIcon.style.display = 'none';
+        stopIcon.style.display = 'block';
+      }
     }
   });
 
@@ -1137,6 +1254,13 @@ function attachWebviewListeners(tab) {
       reloadIcon.style.display = 'block';
       stopIcon.style.display = 'none';
       updateNavButtons(tab);
+    }
+  });
+
+  // Favicon updates: replace blue dot with real website favicon
+  webview.addEventListener('page-favicon-updated', (e) => {
+    if (e.favicons && e.favicons.length > 0) {
+      updateTabFavicon(tab, e.favicons[0]);
     }
   });
 
@@ -1152,8 +1276,11 @@ function attachWebviewListeners(tab) {
         addressInput.placeholder = 'Enter URL (e.g. localhost:3000 or abhi.health)...';
       }
       updateNavButtons(tab);
+      updateBookmarkStar();
     }
     updateTabTitle(tab, webview.getTitle() || e.url);
+    addHistoryEntry(tab);
+    syncMenuTabs();
   });
 
   webview.addEventListener('did-navigate-in-page', (e) => {
@@ -1166,7 +1293,10 @@ function attachWebviewListeners(tab) {
         addressInput.value = e.url;
       }
       updateNavButtons(tab);
+      updateBookmarkStar();
     }
+    addHistoryEntry(tab);
+    syncMenuTabs();
   });
 
   // Page Title Update
@@ -1220,6 +1350,7 @@ function updateTabTitle(tab, rawTitle) {
     titleEl.textContent = tab.title;
     titleEl.title = tab.title;
   }
+  syncMenuTabs();
 }
 
 /**
@@ -1243,6 +1374,7 @@ function activateTab(tabId) {
   }
 
   syncToolbar(targetTab);
+  syncMenuTabs();
   targetTab.tabEl.scrollIntoView({ behavior: 'smooth', inline: 'nearest' });
 }
 
@@ -1270,8 +1402,11 @@ function syncToolbar(tab) {
   roleSelectDot.style.backgroundColor = roleConfig.color;
   roleSelectDot.style.boxShadow = `0 0 8px ${roleConfig.color}`;
   if (roleSelectLabel) {
-    roleSelectLabel.textContent = `Role: ${roleConfig.label}`;
+    roleSelectLabel.textContent = roleConfig.label;
   }
+
+  // Synchronize bookmark star indicator
+  updateBookmarkStar();
 
   // Reload / Stop button state
   if (tab.isLoading) {
@@ -1414,6 +1549,7 @@ function closeTab(tabId) {
   tabToRemove.webview.remove();
 
   state.tabs.splice(index, 1);
+  syncMenuTabs();
 
   if (state.activeTabId === tabId) {
     const nextTab = state.tabs[index] || state.tabs[index - 1] || state.tabs[0];
@@ -1832,7 +1968,7 @@ function initGeminiCopilot() {
   if (openGeminiTabBtn) {
     openGeminiTabBtn.addEventListener('click', () => {
       if (state.tabs.length < MAX_TABS) {
-        createTab({ role: 'Admin', url: 'https://gemini.google.com', activate: true });
+        createTab({ role: 'Gemini', url: 'https://gemini.google.com', activate: true });
         closeGeminiDrawer();
       } else {
         showToast(`Maximum tab limit (${MAX_TABS}) reached.`, 'warning');
@@ -2170,6 +2306,770 @@ function initAutoUpdater() {
       updateBannerDesc.textContent = `Downloading update: ${data.percent}%${extra}...`;
     }
   });
+}
+
+/**
+ * Synchronize open tabs list to native macOS application menu
+ */
+function syncMenuTabs() {
+  if (window.abhiSandbox?.updateOpenTabsMenu) {
+    const list = state.tabs.map(t => ({
+      id: t.id,
+      title: t.title || 'rays.foundation',
+      role: t.role,
+      active: t.id === state.activeTabId
+    }));
+    window.abhiSandbox.updateOpenTabsMenu(list).catch(() => {});
+  }
+}
+
+/**
+ * Replace default blue dot with real website favicon
+ */
+function updateTabFavicon(tab, faviconUrl) {
+  if (!tab || !tab.tabEl) return;
+  tab.favicon = faviconUrl;
+  let faviconEl = tab.tabEl.querySelector('.tab-favicon');
+  const dotEl = tab.tabEl.querySelector('.tab-role-dot');
+
+  if (faviconUrl && !isNewTabPage(tab.url)) {
+    if (!faviconEl) {
+      faviconEl = document.createElement('img');
+      faviconEl.className = 'tab-favicon';
+      faviconEl.alt = '';
+      if (dotEl) {
+        dotEl.style.display = 'none';
+        tab.tabEl.insertBefore(faviconEl, dotEl);
+      }
+    }
+    faviconEl.src = faviconUrl;
+    faviconEl.style.display = 'inline-block';
+    faviconEl.onerror = () => {
+      faviconEl.style.display = 'none';
+      if (dotEl) dotEl.style.display = 'inline-block';
+    };
+  } else {
+    if (faviconEl) faviconEl.style.display = 'none';
+    if (dotEl) dotEl.style.display = 'inline-block';
+  }
+}
+
+/**
+ * Quick-Access Pinned Toolbar Tools Module
+ */
+const PINNABLE_TOOLS = {
+  'tab-overview': {
+    label: 'Tab Overview',
+    title: 'Tab Overview [Ctrl+Tab / Cmd+Shift+O]',
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>`,
+    action: () => openTabOverview()
+  },
+  'bookmarks': {
+    label: 'Bookmarks',
+    title: 'Universal Bookmarks [Cmd+B]',
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+    action: () => { openModal(bookmarksModal); renderBookmarksList(); }
+  },
+  'history': {
+    label: 'History',
+    title: 'Browsing History [Cmd+Y]',
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+    action: () => { openModal(historyModal); renderHistoryList(); }
+  },
+  'phone-mode': {
+    label: 'Device Viewport',
+    title: 'Device Viewport Emulation [Cmd+Shift+M]',
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3" ry="3"/><line x1="11" y1="18" x2="13" y2="18"/></svg>`,
+    action: () => togglePhoneMode()
+  },
+  'split-view': {
+    label: 'Side-by-Side Dual View',
+    title: 'Side-by-Side Dual View [Cmd+Shift+S]',
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>`,
+    action: () => toggleSplitView()
+  },
+  'extensions': {
+    label: 'Universal Extensions',
+    title: 'Universal Extensions',
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>`,
+    action: () => { openModal(extensionsModal); loadExtensionsList(); }
+  },
+  'inspect-cookies': {
+    label: 'Cookies',
+    title: 'Inspect Partition Cookies [Cmd+Shift+C]',
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`,
+    action: () => { const active = getActiveTab(); if (active) openCookiesModal(active); }
+  },
+  'devtools': {
+    label: 'DevTools',
+    title: 'Developer Tools [F12]',
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+    action: () => { const active = getActiveTab(); if (active?.webview) active.webview.openDevTools(); }
+  },
+  'theme-toggle': {
+    label: 'Theme',
+    title: 'Toggle Theme [Cmd+Shift+T]',
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+    action: () => cycleTheme()
+  }
+};
+
+function getPinnedTools() {
+  try {
+    const raw = localStorage.getItem('rays_pinned_tools');
+    if (raw) return JSON.parse(raw);
+  } catch (_e) {}
+  return ['tab-overview', 'bookmarks', 'history'];
+}
+
+function savePinnedTools(pinnedArray) {
+  try {
+    localStorage.setItem('rays_pinned_tools', JSON.stringify(pinnedArray));
+  } catch (_e) {}
+}
+
+function initPinnedTools() {
+  renderPinnedTools();
+
+  document.querySelectorAll('.menu-item-pin-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const pinId = btn.getAttribute('data-pin-id');
+      if (!pinId || !PINNABLE_TOOLS[pinId]) return;
+
+      const current = getPinnedTools();
+      const idx = current.indexOf(pinId);
+      const isPinnedNow = idx === -1;
+
+      if (isPinnedNow) {
+        current.push(pinId);
+        showToast(`Pinned ${PINNABLE_TOOLS[pinId].label} to toolbar`, 'info');
+      } else {
+        current.splice(idx, 1);
+        showToast(`Unpinned ${PINNABLE_TOOLS[pinId].label} from toolbar`, 'info');
+      }
+
+      savePinnedTools(current);
+      renderPinnedTools();
+    });
+  });
+}
+
+function renderPinnedTools() {
+  if (!toolbarPinnedTools) return;
+  const pinned = getPinnedTools();
+
+  document.querySelectorAll('.menu-item-pin-btn').forEach(btn => {
+    const pinId = btn.getAttribute('data-pin-id');
+    const isPinned = pinned.includes(pinId);
+    btn.classList.toggle('pinned', isPinned);
+    btn.title = isPinned ? 'Unpin from toolbar' : 'Pin to toolbar';
+  });
+
+  toolbarPinnedTools.innerHTML = '';
+  pinned.forEach(pinId => {
+    const tool = PINNABLE_TOOLS[pinId];
+    if (!tool) return;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'icon-action-btn pinned-tool-btn';
+    btn.title = tool.title;
+    btn.setAttribute('data-pin-id', pinId);
+    btn.innerHTML = tool.iconSvg;
+
+    btn.addEventListener('click', () => {
+      tool.action();
+    });
+
+    toolbarPinnedTools.appendChild(btn);
+  });
+}
+
+/**
+ * Universal Bookmarks Module
+ */
+function getBookmarks() {
+  try {
+    const raw = localStorage.getItem('rays_bookmarks');
+    if (raw) return JSON.parse(raw);
+  } catch (_e) {}
+  return [];
+}
+
+function saveBookmarks(list) {
+  try {
+    localStorage.setItem('rays_bookmarks', JSON.stringify(list));
+  } catch (_e) {}
+}
+
+function isCurrentTabBookmarked() {
+  const activeTab = getActiveTab();
+  if (!activeTab || isNewTabPage(activeTab.url)) return false;
+  const bookmarks = getBookmarks();
+  return bookmarks.some(b => b.url === activeTab.url);
+}
+
+function updateBookmarkStar() {
+  if (!bookmarkStarBtn) return;
+  const activeTab = getActiveTab();
+  if (!activeTab || isNewTabPage(activeTab.url)) {
+    bookmarkStarBtn.style.opacity = '0.5';
+    bookmarkStarBtn.classList.remove('bookmarked');
+    bookmarkStarBtn.title = 'Bookmark this tab [Cmd+B]';
+    return;
+  }
+  bookmarkStarBtn.style.opacity = '1';
+  const bookmarked = isCurrentTabBookmarked();
+  bookmarkStarBtn.classList.toggle('bookmarked', bookmarked);
+  bookmarkStarBtn.title = bookmarked ? 'Remove bookmark [Cmd+B]' : 'Bookmark this tab [Cmd+B]';
+}
+
+function toggleBookmarkActiveTab() {
+  const activeTab = getActiveTab();
+  if (!activeTab) return;
+  if (isNewTabPage(activeTab.url)) {
+    showToast('Cannot bookmark start page', 'warning');
+    return;
+  }
+
+  const bookmarks = getBookmarks();
+  const existingIdx = bookmarks.findIndex(b => b.url === activeTab.url);
+
+  if (existingIdx !== -1) {
+    bookmarks.splice(existingIdx, 1);
+    saveBookmarks(bookmarks);
+    updateBookmarkStar();
+    showToast('Bookmark removed', 'info');
+  } else {
+    bookmarks.unshift({
+      id: 'bm_' + Date.now(),
+      url: activeTab.url,
+      title: activeTab.title || activeTab.url,
+      role: activeTab.role,
+      date: new Date().toLocaleDateString()
+    });
+    saveBookmarks(bookmarks);
+    updateBookmarkStar();
+    showToast('Added to Universal Bookmarks', 'success');
+  }
+
+  if (bookmarksModal && bookmarksModal.classList.contains('show')) {
+    renderBookmarksList(bookmarksSearchInput ? bookmarksSearchInput.value : '');
+  }
+}
+
+function renderBookmarksList(query = '') {
+  if (!bookmarksListEl) return;
+  const bookmarks = getBookmarks();
+  const filtered = query.trim()
+    ? bookmarks.filter(b => (b.title + ' ' + b.url).toLowerCase().includes(query.toLowerCase()))
+    : bookmarks;
+
+  if (filtered.length === 0) {
+    bookmarksListEl.innerHTML = `
+      <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 12px;">
+        ${query ? 'No matching bookmarks found.' : 'No bookmarks saved yet. Click the star icon in the address bar to bookmark any page.'}
+      </div>
+    `;
+    return;
+  }
+
+  bookmarksListEl.innerHTML = '';
+  filtered.forEach(bm => {
+    const roleConfig = ROLE_CONFIGS[bm.role] || ROLE_CONFIGS.Custom;
+    const card = document.createElement('div');
+    card.className = 'history-item';
+    card.innerHTML = `
+      <div style="flex-shrink: 0; color: #f59e0b;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </div>
+      <div class="history-item-info">
+        <div class="history-item-title">${escapeHtml(bm.title || bm.url)}</div>
+        <div class="history-item-url">${escapeHtml(bm.url)}</div>
+      </div>
+      <span class="tab-role-pill" style="color: ${roleConfig.color}; border-color: ${roleConfig.color};">${escapeHtml(roleConfig.label)}</span>
+      <button class="history-item-delete" title="Delete bookmark" data-bm-id="${bm.id}">&times;</button>
+    `;
+
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.history-item-delete')) {
+        e.stopPropagation();
+        const updated = getBookmarks().filter(b => b.id !== bm.id);
+        saveBookmarks(updated);
+        renderBookmarksList(bookmarksSearchInput ? bookmarksSearchInput.value : '');
+        updateBookmarkStar();
+        return;
+      }
+      const activeTab = getActiveTab();
+      if (activeTab?.webview) {
+        activeTab.webview.loadURL(bm.url);
+      }
+      closeModal(bookmarksModal);
+    });
+
+    bookmarksListEl.appendChild(card);
+  });
+}
+
+function initBookmarks() {
+  if (bookmarkStarBtn) {
+    bookmarkStarBtn.addEventListener('click', toggleBookmarkActiveTab);
+  }
+
+  if (menuBookmarksBtn) {
+    menuBookmarksBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      openModal(bookmarksModal);
+      renderBookmarksList();
+    });
+  }
+
+  if (bookmarksSearchInput) {
+    bookmarksSearchInput.addEventListener('input', (e) => {
+      renderBookmarksList(e.target.value);
+    });
+  }
+}
+
+/**
+ * Universal Browsing History Module
+ */
+function getHistory() {
+  try {
+    const raw = localStorage.getItem('rays_history');
+    if (raw) return JSON.parse(raw);
+  } catch (_e) {}
+  return [];
+}
+
+function saveHistory(list) {
+  try {
+    localStorage.setItem('rays_history', JSON.stringify(list.slice(0, 500)));
+  } catch (_e) {}
+}
+
+function addHistoryEntry(tab) {
+  if (!tab || !tab.url || isNewTabPage(tab.url) || !tab.url.startsWith('http')) return;
+  const history = getHistory();
+  if (history.length > 0 && history[0].url === tab.url) return;
+
+  const roleConfig = ROLE_CONFIGS[tab.role] || ROLE_CONFIGS.Custom;
+  history.unshift({
+    id: 'hist_' + Date.now(),
+    url: tab.url,
+    title: tab.title && tab.title !== 'Loading...' ? tab.title : tab.url,
+    role: tab.role,
+    roleColor: roleConfig.color,
+    timestamp: Date.now()
+  });
+  saveHistory(history);
+}
+
+function clearAllHistory() {
+  localStorage.removeItem('rays_history');
+  renderHistoryList();
+  showToast('Browsing history cleared', 'info');
+}
+
+function renderHistoryList(query = '') {
+  if (!historyListEl) return;
+  const history = getHistory();
+  const filtered = query.trim()
+    ? history.filter(h => (h.title + ' ' + h.url + ' ' + h.role).toLowerCase().includes(query.toLowerCase()))
+    : history;
+
+  if (filtered.length === 0) {
+    historyListEl.innerHTML = `
+      <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 12px;">
+        ${query ? 'No matching history entries found.' : 'No browsing history recorded yet.'}
+      </div>
+    `;
+    return;
+  }
+
+  historyListEl.innerHTML = '';
+  filtered.forEach(item => {
+    const timeStr = new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const card = document.createElement('div');
+    card.className = 'history-item';
+    card.innerHTML = `
+      <div class="history-item-info">
+        <div class="history-item-title">${escapeHtml(item.title || item.url)}</div>
+        <div class="history-item-url">${escapeHtml(item.url)}</div>
+      </div>
+      <span class="tab-role-pill" style="color: ${item.roleColor || '#10b981'}; border-color: ${item.roleColor || '#10b981'};">${escapeHtml(item.role)}</span>
+      <span class="history-item-time">${timeStr}</span>
+      <button class="history-item-delete" title="Delete entry" data-hist-id="${item.id}">&times;</button>
+    `;
+
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.history-item-delete')) {
+        e.stopPropagation();
+        const updated = getHistory().filter(h => h.id !== item.id);
+        saveHistory(updated);
+        renderHistoryList(historySearchInput ? historySearchInput.value : '');
+        return;
+      }
+      const activeTab = getActiveTab();
+      if (activeTab?.webview) {
+        activeTab.webview.loadURL(item.url);
+      }
+      closeModal(historyModal);
+    });
+
+    historyListEl.appendChild(card);
+  });
+}
+
+function initHistory() {
+  if (menuHistoryBtn) {
+    menuHistoryBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      openModal(historyModal);
+      renderHistoryList();
+    });
+  }
+
+  if (clearHistoryBtn) {
+    clearHistoryBtn.addEventListener('click', clearAllHistory);
+  }
+
+  if (historySearchInput) {
+    historySearchInput.addEventListener('input', (e) => {
+      renderHistoryList(e.target.value);
+    });
+  }
+}
+
+/**
+ * SSL Security Certificate Popover
+ */
+function initSecurityCertificate() {
+  if (!securityBadgeBtn || !sslCertPopover) return;
+
+  securityBadgeBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const isVisible = sslCertPopover.style.display !== 'none';
+    if (isVisible) {
+      sslCertPopover.style.display = 'none';
+      return;
+    }
+
+    const activeTab = getActiveTab();
+    if (!activeTab) return;
+
+    sslCertPopover.innerHTML = '<div style="padding: 12px; font-size: 12px; color: var(--text-muted);">Inspecting site security...</div>';
+    sslCertPopover.style.display = 'block';
+
+    const currentUrl = activeTab.url || '';
+    if (isNewTabPage(currentUrl)) {
+      sslCertPopover.innerHTML = `
+        <div class="ssl-popover-header">
+          <div class="ssl-popover-icon secure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <div class="ssl-popover-title-wrap">
+            <div class="ssl-popover-title">Built-in Workspace</div>
+            <div class="ssl-popover-subtitle">Internal offline start page</div>
+          </div>
+        </div>
+        <div class="ssl-popover-body">
+          <p style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4; margin: 0;">
+            <strong>rays.foundation</strong> is the private workspace start page running locally in Rays OmniDeck. Zero network telemetry or third-party trackers.
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    if (currentUrl.startsWith('https://')) {
+      let certInfo = null;
+      if (window.abhiSandbox?.getCertificateInfo) {
+        try {
+          certInfo = await window.abhiSandbox.getCertificateInfo(currentUrl);
+        } catch (_err) {}
+      }
+
+      const domain = (() => {
+        try { return new URL(currentUrl).hostname; } catch (_e) { return currentUrl; }
+      })();
+
+      const issuer = certInfo?.issuer || 'Trusted Certificate Authority';
+      const validTo = certInfo?.validTo ? new Date(certInfo.validTo).toLocaleDateString() : 'Verified';
+      const protocol = certInfo?.protocol || 'TLS 1.3';
+
+      sslCertPopover.innerHTML = `
+        <div class="ssl-popover-header">
+          <div class="ssl-popover-icon secure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <div class="ssl-popover-title-wrap">
+            <div class="ssl-popover-title">Connection is Secure</div>
+            <div class="ssl-popover-subtitle">Valid SSL/TLS Certificate</div>
+          </div>
+        </div>
+        <div class="ssl-popover-body">
+          <div class="ssl-cert-row">
+            <span class="ssl-cert-label">Domain</span>
+            <span class="ssl-cert-value">${escapeHtml(domain)}</span>
+          </div>
+          <div class="ssl-cert-row">
+            <span class="ssl-cert-label">Issuer</span>
+            <span class="ssl-cert-value">${escapeHtml(issuer)}</span>
+          </div>
+          <div class="ssl-cert-row">
+            <span class="ssl-cert-label">Valid Until</span>
+            <span class="ssl-cert-value">${escapeHtml(validTo)}</span>
+          </div>
+          <div class="ssl-cert-row">
+            <span class="ssl-cert-label">Protocol</span>
+            <span class="ssl-cert-value">${escapeHtml(protocol)}</span>
+          </div>
+        </div>
+      `;
+    } else {
+      const domain = (() => {
+        try { return new URL(currentUrl).hostname; } catch (_e) { return currentUrl; }
+      })();
+
+      sslCertPopover.innerHTML = `
+        <div class="ssl-popover-header">
+          <div class="ssl-popover-icon insecure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <div class="ssl-popover-title-wrap">
+            <div class="ssl-popover-title" style="color: #ef4444;">Not Secure</div>
+            <div class="ssl-popover-subtitle">Unencrypted HTTP connection</div>
+          </div>
+        </div>
+        <div class="ssl-popover-body">
+          <p style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4; margin: 0;">
+            This site (<strong>${escapeHtml(domain)}</strong>) does not provide an SSL certificate. Passwords or cookies could be intercepted by attackers on the network.
+          </p>
+        </div>
+      `;
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!securityBadgeBtn.contains(e.target) && !sslCertPopover.contains(e.target)) {
+      sslCertPopover.style.display = 'none';
+    }
+  });
+}
+
+/**
+ * Address Bar Real-Time Search Suggestions
+ */
+let suggestionDebounceTimer = null;
+let selectedSuggestionIndex = -1;
+
+function initSearchSuggestions() {
+  if (!addressInput || !searchSuggestionsDropdown) return;
+
+  addressInput.addEventListener('input', () => {
+    clearTimeout(suggestionDebounceTimer);
+    const query = addressInput.value.trim();
+
+    if (!query || query.startsWith('http://') || query.startsWith('https://') || query.startsWith('localhost') || query.startsWith('127.0.0.1')) {
+      searchSuggestionsDropdown.style.display = 'none';
+      return;
+    }
+
+    suggestionDebounceTimer = setTimeout(async () => {
+      if (!window.abhiSandbox?.getSearchSuggestions) return;
+      try {
+        const suggestions = await window.abhiSandbox.getSearchSuggestions(query);
+        renderSearchSuggestions(query, suggestions);
+      } catch (_e) {
+        searchSuggestionsDropdown.style.display = 'none';
+      }
+    }, 150);
+  });
+
+  addressInput.addEventListener('keydown', (e) => {
+    const items = searchSuggestionsDropdown.querySelectorAll('.suggestion-item');
+    if (searchSuggestionsDropdown.style.display === 'none' || items.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedSuggestionIndex = (selectedSuggestionIndex + 1) % items.length;
+      highlightSuggestion(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedSuggestionIndex = (selectedSuggestionIndex - 1 + items.length) % items.length;
+      highlightSuggestion(items);
+    } else if (e.key === 'Escape') {
+      searchSuggestionsDropdown.style.display = 'none';
+    } else if (e.key === 'Enter' && selectedSuggestionIndex >= 0 && items[selectedSuggestionIndex]) {
+      e.preventDefault();
+      items[selectedSuggestionIndex].click();
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!addressInput.contains(e.target) && !searchSuggestionsDropdown.contains(e.target)) {
+      searchSuggestionsDropdown.style.display = 'none';
+    }
+  });
+}
+
+function highlightSuggestion(items) {
+  items.forEach((item, i) => {
+    const isSel = i === selectedSuggestionIndex;
+    item.classList.toggle('selected', isSel);
+    if (isSel) {
+      addressInput.value = item.getAttribute('data-query');
+    }
+  });
+}
+
+function renderSearchSuggestions(currentQuery, suggestions) {
+  if (!suggestions || suggestions.length === 0) {
+    searchSuggestionsDropdown.style.display = 'none';
+    return;
+  }
+
+  selectedSuggestionIndex = -1;
+  searchSuggestionsDropdown.innerHTML = '';
+
+  suggestions.slice(0, 7).forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'suggestion-item';
+    item.setAttribute('data-query', s);
+    item.innerHTML = `
+      <svg class="suggestion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <span class="suggestion-text">${escapeHtml(s)}</span>
+    `;
+
+    item.addEventListener('click', () => {
+      addressInput.value = s;
+      searchSuggestionsDropdown.style.display = 'none';
+      const activeTab = getActiveTab();
+      if (activeTab?.webview) {
+        activeTab.webview.loadURL(`https://www.google.com/search?q=${encodeURIComponent(s)}`);
+      }
+    });
+
+    searchSuggestionsDropdown.appendChild(item);
+  });
+
+  searchSuggestionsDropdown.style.display = 'block';
+}
+
+/**
+ * Universal Extensions Manager
+ */
+async function loadExtensionsList() {
+  if (!extensionsListEl || !window.abhiSandbox?.listExtensions) return;
+  try {
+    const list = await window.abhiSandbox.listExtensions();
+    if (!list || list.length === 0) {
+      extensionsListEl.innerHTML = `
+        <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 24px;">
+          No custom extensions loaded yet. Click "+ Load Unpacked Extension" to install Chrome extension folders.
+        </div>
+      `;
+      return;
+    }
+
+    extensionsListEl.innerHTML = '';
+    list.forEach(ext => {
+      const card = document.createElement('div');
+      card.className = 'history-item';
+      card.innerHTML = `
+        <div style="color: var(--brand-primary); flex-shrink: 0;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/>
+          </svg>
+        </div>
+        <div class="history-item-info">
+          <div class="history-item-title">${escapeHtml(ext.name)} <span style="font-size: 10px; color: var(--text-muted);">v${escapeHtml(ext.version || '1.0')}</span></div>
+          <div class="history-item-url">${escapeHtml(ext.id)}</div>
+        </div>
+        <button class="modal-btn danger" style="padding: 3px 8px; font-size: 10px;" data-remove-ext="${ext.id}">Remove</button>
+      `;
+
+      card.querySelector('[data-remove-ext]').addEventListener('click', async () => {
+        if (window.abhiSandbox?.removeExtension) {
+          await window.abhiSandbox.removeExtension(ext.id);
+          showToast(`Extension "${ext.name}" removed`, 'info');
+          loadExtensionsList();
+        }
+      });
+
+      extensionsListEl.appendChild(card);
+    });
+  } catch (err) {
+    console.error('Failed to load extensions:', err);
+  }
+}
+
+function initUniversalExtensions() {
+  if (loadUnpackedExtBtn) {
+    loadUnpackedExtBtn.addEventListener('click', async () => {
+      if (!window.abhiSandbox?.loadExtension) return;
+      try {
+        const res = await window.abhiSandbox.loadExtension();
+        if (res?.success) {
+          showToast(`Loaded extension: ${res.name}`, 'success');
+          loadExtensionsList();
+        } else if (res?.error) {
+          showToast(`Extension error: ${res.error}`, 'warning');
+        }
+      } catch (err) {
+        showToast(`Failed: ${err.message}`, 'error');
+      }
+    });
+  }
+
+  if (menuExtensionsBtn) {
+    menuExtensionsBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      openModal(extensionsModal);
+      loadExtensionsList();
+    });
+  }
+}
+
+/**
+ * Ecosystem Upcoming Features Notifications ("Soon" Badges)
+ */
+function initEcosystemSuite() {
+  if (menuRaysVaultBtn) {
+    menuRaysVaultBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      showToast('Rays Vault (Encrypted Password Management): Coming soon in the next major ecosystem release!', 'info');
+    });
+  }
+
+  if (menuRaysBlueBtn) {
+    menuRaysBlueBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      showToast('Rays Blue (Direct WebRTC P2P File Sharing): Coming soon in the next major ecosystem release!', 'info');
+    });
+  }
+
+  if (menuRaysAppBtn) {
+    menuRaysAppBtn.addEventListener('click', () => {
+      if (moreMenuDropdown) moreMenuDropdown.style.display = 'none';
+      showToast('Rays App (Secure Peer Messaging Platform): Coming soon in the next major ecosystem release!', 'info');
+    });
+  }
 }
 
 window.addEventListener('DOMContentLoaded', init);
